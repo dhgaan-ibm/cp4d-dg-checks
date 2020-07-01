@@ -1,0 +1,12 @@
+## Checking connectivity to input url
+---
+- hosts: all
+  gather_facts: yes
+
+  tasks:
+  - debug:
+      var: "{{ url }}"
+  - name: Check Input URL
+    shell: ping -c 1 {{ url }}
+    register: output
+    failed_when: "output.rc != 0"

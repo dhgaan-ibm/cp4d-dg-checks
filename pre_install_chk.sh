@@ -1,4 +1,4 @@
-#!/bin/bash
+#/bin/bash
 
 #output file
 OUTPUT="/tmp/preInstallCheckResult"
@@ -282,21 +282,22 @@ function check_unblocked_urls(){
     echo -e "\nChecking connectivity to required links" | tee -a ${OUTPUT}
     BLOCKED=0
     URLS=(
-	registry.redhat.io
-	*.quay.io
-	sso.redhat.com
+	http://registry.ibmcloudpack.com/cpd301/
+	https://registry.redhat.io
+	https://quay.io
+	https://sso.redhat.com
 	https://github.com/IBM
-	cp.icr.io/cp/cpd
-	us.icr.io
-	gcr.io
-	k8s.gcr.io
-	quay.io
-	docker.io
-	https://raw.githubusercontent.com/IBM/cloud-pak/master/repo/cpd
-	myibm.ibm.com
+	https://cp.icr.io/cp/cpd
+	https://us.icr.io
+	https://gcr.io
+	https://k8s.gcr.io
+	https://quay.io
+	https://docker.io
+	https://raw.github.com/IBM/cloud-pak/master/repo/cpd3
+	https://myibm.ibm.com
 	https://www.ibm.com/software/passportadvantage/pao_customer.html
 	https://www.ibm.com/support/knowledgecenter
-	http://registry.ibmcloudpack.com/cpd/cpd-portworx-2.5.0.tar.gz
+	http://registry.ibmcloudpack.com/
 	https://docs.portworx.com
     )
     for i in "${URLS[@]}"
@@ -353,6 +354,31 @@ function check_redhatartifactory(){
         log "WARNING: registry.redhat.io is not reachable. Enabling proxy might fix this issue." result
         cat ${ANSIBLEOUT} >> ${OUTPUT}
         WARNING=1
+    else
+        log "[Passed]" result
+    fi
+    LOCALTEST=1
+    output+="$result"
+
+    if [[ ${LOCALTEST} -eq 1 ]]; then
+        printout "$output"
+    fi
+}
+
+function check_fix_clocksync(){
+    output=""
+    #if [[ ${FIX} -eq 1 ]]; then
+    #    echo -e "\nFixing timesync status" | tee -a ${OUTPUT}
+    #    ansible-playbook -i hosts_openshift -l ${hosts} playbook/clocksync_fix.yml > ${ANSIBLEOUT}
+    #else
+    echo -e "\nChecking timesync status" | tee -a ${OUTPUT}
+    ansible-playbook -i hosts_openshift -l ${hosts} playbook/clocksync_check.yml > ${ANSIBLEOUT}
+#    fi
+
+    if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
+        log "ERROR: System clock is currently not synchronised, use ntpd or chrony to sync time" result
+        cat ${ANSIBLEOUT} >> ${OUTPUT}
+        ERROR=1
     else
         log "[Passed]" result
     fi

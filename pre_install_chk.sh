@@ -396,19 +396,19 @@ else
 fi
 
 if [[ ${PRE} -eq 1 ]]; then
-    validate_internet_connectivity
-    validate_ips
-    check_dnsconfiguration
-    check_processor
-    check_dnsresolve
-    check_gateway
-    check_hostname
-    check_disklatency
-    check_diskthroughput
+#    validate_internet_connectivity
+#    validate_ips
+#    check_dnsconfiguration
+#    check_processor
+#    check_dnsresolve
+#    check_gateway
+#    check_hostname
+#    check_disklatency
+#    check_diskthroughput
 #    check_ibmartifactory
 #    check_redhatartifactory
-    check_dockerdir_type
-#    check_unblocked_urls
+#    check_dockerdir_type
+    check_unblocked_urls
 elif [[ ${POST} -eq 1 ]]; then
     echo -e "\nNot implemented."
     exit 1

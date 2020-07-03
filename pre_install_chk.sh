@@ -436,8 +436,7 @@ if [[ ${PRE} -eq 1 ]]; then
 #    check_dockerdir_type
     check_unblocked_urls
 elif [[ ${POST} -eq 1 ]]; then
-    echo -e "\nNot implemented."
-    exit 1
+    check_fix_clocksync
 fi
 
 if [[ ${ERROR} -eq 1 ]]; then

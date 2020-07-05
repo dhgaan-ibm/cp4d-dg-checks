@@ -1,0 +1,21 @@
+## Checking Kernel Virtual Memory
+
+---
+- hosts: all
+  gather_facts: yes
+
+  roles:
+    - akirak.coreos-python
+
+  tasks:
+  - name: Populate Variable
+    shell: sysctl vm.max_map_count
+    register: vm
+    
+  - debug:
+      var: vm.stdout
+
+  - name: Check Kernel VM
+    shell: echo "'{{ vm.stdout }}' is not configured correctly."
+    register: output
+    failed_when: vm.stdout != "vm.max_map_count = 262144"

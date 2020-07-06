@@ -1,0 +1,21 @@
+## Checking max size of message queue in bytes on compute node
+
+---
+- hosts: all
+  gather_facts: yes
+
+  roles:
+    - akirak.coreos-python
+
+  tasks:
+  - name: Populate msg_mnb Variable
+    shell: sysctl kernel.msgmnb
+    register: msg_mnb
+
+  - debug:
+      var: msg_mnb.stdout
+
+  - name: Check Maximum Queue Size in bytes
+    shell: echo "kernel.msgmnb is not configured correctly."
+    register: output2
+    failed_when: msg_mnb.stdout != "kernel.msgmnb = 65536"

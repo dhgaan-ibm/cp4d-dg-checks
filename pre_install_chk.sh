@@ -390,6 +390,64 @@ function check_fix_clocksync(){
     fi
 }
 
+function check_kernel_vm(){
+    output=""
+    echo -e "\nChecking kernel virtual memory on compute nodes" | tee -a ${OUTPUT}
+    ansible-playbook -i hosts_openshift -l worker playbook/kern_vm_check.yml > ${ANSIBLEOUT}
+
+    if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
+        log "ERROR: Kernel virtual memory on compute nodes should be set to 262144. Run 'sysctl vm.max_map_count' to see the current value." result
+        cat ${ANSIBLEOUT} >> ${OUTPUT}
+        WARNING=1
+    else
+        log "[Passed]" result
+    fi
+    LOCALTEST=1
+    output+="$result"
+
+    if [[ ${LOCALTEST} -eq 1 ]]; then
+        printout "$output"
+    fi
+
+}
+
+function check_message_limit(){
+    output=""
+    echo -e "\nChecking message limits on compute nodes" | tee -a ${OUTPUT}
+    ansible-playbook -i hosts_openshift -l worker playbook/max_msg_size_check.yml > ${ANSIBLEOUT}
+
+    if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
+        log "ERROR: Maximum allowable size of messages in bytes should be set to 65536." result
+        cat ${ANSIBLEOUT} >> ${OUTPUT}
+        ERROR=1
+    fi
+
+    ansible-playbook -i hosts_openshift -l worker playbook/max_queue_size_check.yml > ${ANSIBLEOUT}
+
+    if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
+        log "ERROR: Maximum allowable size of message queue in bytes should be set to 65536." result
+        cat ${ANSIBLEOUT} >> ${OUTPUT}
+        ERROR=1
+    fi
+
+    ansible-playbook -i hosts_openshift -l worker playbook/max_num_queue_check.yml > ${ANSIBLEOUT}
+
+    if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
+        log "ERROR: Maximum number of queue identifiers should be set to 32768." result
+        cat ${ANSIBLEOUT} >> ${OUTPUT}
+        ERROR=1
+    else
+        log "[Passed]" result
+    fi
+    LOCALTEST=1
+    output+="$result"
+
+    if [[ ${LOCALTEST} -eq 1 ]]; then
+        printout "$output"
+    fi
+
+}
+
 if [[ $# -lt 1 ]]; then
     echo -e "Please specify pre/post. i.e. --phase=[pre_openshift|post_openshift]"
     exit 1
@@ -437,6 +495,8 @@ if [[ ${PRE} -eq 1 ]]; then
     check_unblocked_urls
 elif [[ ${POST} -eq 1 ]]; then
     check_fix_clocksync
+    check_kernel_vm
+    check_message_limit
 fi
 
 if [[ ${ERROR} -eq 1 ]]; then

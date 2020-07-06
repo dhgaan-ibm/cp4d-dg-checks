@@ -1,0 +1,21 @@
+## Checking maximum number of queue identifiers on compute node
+
+---
+- hosts: all
+  gather_facts: yes
+
+  roles:
+    - akirak.coreos-python
+
+  tasks:
+  - name: Populate msg_mni Variable
+    shell: sysctl kernel.msgmni
+    register: msg_mni
+
+  - debug:
+      var: msg_mni.stdout
+
+  - name: Check Maximum Number of Queue Identifiers
+    shell: echo "kernel.msgmni is not configured correctly."
+    register: output2
+    failed_when: msg_mni.stdout != "kernel.msgmni = 32768"

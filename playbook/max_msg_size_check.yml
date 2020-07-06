@@ -1,0 +1,22 @@
+## Checking Message Limit on Compute Node
+
+---
+- hosts: all
+  gather_facts: yes
+
+  roles:
+    - akirak.coreos-python
+
+  tasks:
+  - name: Populate msg_max Variable
+    shell: sysctl kernel.msgmax
+    register: msg_max
+
+  - debug:
+      var: msg_max.stdout
+
+  - name: Check Maximum Message Size
+    shell: echo "kernel.msgmax is not configured correctly."
+    register: output
+    failed_when: msg_max.stdout != "kernel.msgmax = 65536"
+

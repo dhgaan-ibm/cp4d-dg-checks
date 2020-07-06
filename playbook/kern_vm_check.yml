@@ -16,6 +16,6 @@
       var: vm.stdout
 
   - name: Check Kernel VM
-    shell: echo "'{{ vm.stdout }}' is not configured correctly."
+    shell: grep -Eo [0-9]* <<< "{{ vm.stdout }}"
     register: output
-    failed_when: vm.stdout != "vm.max_map_count = 262144"
+    failed_when: output.stdout < 262144

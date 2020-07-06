@@ -16,6 +16,6 @@
       var: msg_mni.stdout
 
   - name: Check Maximum Number of Queue Identifiers
-    shell: echo "kernel.msgmni is not configured correctly."
+    shell: grep -Eo [0-9]* <<< "{{ msg_mni.stdout }}"
     register: output2
-    failed_when: msg_mni.stdout != "kernel.msgmni = 32768"
+    failed_when: output2.stdout < 32768

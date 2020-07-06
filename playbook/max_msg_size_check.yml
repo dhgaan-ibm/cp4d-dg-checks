@@ -16,7 +16,7 @@
       var: msg_max.stdout
 
   - name: Check Maximum Message Size
-    shell: echo "kernel.msgmax is not configured correctly."
+    shell: grep -Eo [0-9]* <<< "{{ msg_max.stdout }}"
     register: output
-    failed_when: msg_max.stdout != "kernel.msgmax = 65536"
+    failed_when: output.stdout < 65536
 

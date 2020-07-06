@@ -8,7 +8,7 @@
     - akirak.coreos-python
 
   tasks:
-  - name: Populate Variable
+  - name: Populate msg_max Variable
     shell: sysctl kernel.msgmax
     register: msg_max
 
@@ -19,3 +19,17 @@
     shell: echo "'{{ msg_max.stdout }}' is not configured correctly."
     register: output
     failed_when: msg_max.stdout != "kernel.msgmax = 65536"
+
+  - name: Populate Variable
+    shell: sysctl kernel.msgmnb
+    register: msg_mnb
+
+  - debug:
+      var: msg_mnb.stdout
+
+  - name: Check Maximum Queue Size
+    shell: echo "'{{ msg_mnb.stdout }}' is not configured correctly."
+    register: output2
+    failed_when: msg_mnb.stdout != "kernel.msgmnb = 65536"
+
+

@@ -31,3 +31,16 @@
     register: client_time
     failed_when: (client_time_units.stdout == 's' and client_time.stdout|int < 300) or
                  (client_time_units.stdout == 'm' and client_time.stdout|int < 5)
+
+  - name: Determine if server in seconds or minutes
+    shell: grep -Eo '(s$|m$)' <<< "{{ server.stdout }}"
+    register: server_time_units
+
+  - name: Check server timeout settings
+    shell: grep -Eo [0-9]* <<< "{{server.stdout }}"
+    register: server_time
+    failed_when: (server_time_units.stdout == 's' and server_time.stdout|int < 300) or
+                 (server_time_units.stdout == 'm' and server_time.stdout|int < 5)
+
+
+

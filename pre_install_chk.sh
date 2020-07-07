@@ -338,13 +338,13 @@ function check_unblocked_urls(){
 	https://quay.io
 	https://sso.redhat.com
 	https://github.com/IBM
-	https://cp.icr.io/cp/cpd
+	https://cp.icr.io
 	https://us.icr.io
 	https://gcr.io
 	https://k8s.gcr.io
 	https://quay.io
 	https://docker.io
-	https://raw.github.com/IBM/cloud-pak/master/repo/cpd3
+	https://raw.github.com
 	https://myibm.ibm.com
 	https://www.ibm.com/software/passportadvantage/pao_customer.html
 	https://www.ibm.com/support/knowledgecenter

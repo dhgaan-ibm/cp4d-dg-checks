@@ -18,7 +18,7 @@
   - name: Check luks enabled
     shell: grep 'luks' <<< "{{ devices_list.stdout }}" | wc -l
     register: num_luks
-    failed_when: num_luks.stdout == 0
+    #failed_when: num_luks.stdout == 0
 
   - debug:
       var: num_luks.stdout

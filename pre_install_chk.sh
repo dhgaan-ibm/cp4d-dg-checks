@@ -38,7 +38,7 @@ function check_openshift_version() {
     ansible-playbook -i hosts_openshift -l ${hosts} playbook/check_oc_ver.yml > ${ANSIBLEOUT}
  
     if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
-        log "ERROR: Your version of Openshift is not compatible with Cloud Pak 4 Data. Please update to either version 3.11 or 4.3." result
+        log "ERROR: Your version of Openshift is not compatible with Cloud Pak 4 Data. Please update to at least version 4.3.13" result
         cat ${ANSIBLEOUT} >> ${OUTPUT}
         ERROR=1
     else
@@ -56,7 +56,7 @@ function check_openshift_version() {
 function check_crio_version() {
     output=""
     echo -e "\nChecking CRI-O Version" | tee -a ${OUTPUT}
-    ansible-playbook -i hosts_openshift -l ${hosts} playbook/check_crio_version.yml > ${ANSIBLEOUT}
+    ansible-playbook -i hosts_openshift -l master playbook/check_crio_version.yml > ${ANSIBLEOUT}
 
     if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
         log "ERROR: Version of CRI-O must be at least 1.13." result
@@ -447,7 +447,7 @@ function check_kernel_vm(){
     ansible-playbook -i hosts_openshift -l worker playbook/kern_vm_check.yml > ${ANSIBLEOUT}
 
     if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
-        log "ERROR: Kernel virtual memory on compute nodes should be set to 262144. Please update the vm.max_map_count parameter in /etc/sysctl.conf" result
+        log "ERROR: Kernel virtual memory on compute nodes should be set to at least 262144. Please update the vm.max_map_count parameter in /etc/sysctl.conf" result
         cat ${ANSIBLEOUT} >> ${OUTPUT}
         WARNING=1
     else
@@ -468,7 +468,7 @@ function check_message_limit(){
     ansible-playbook -i hosts_openshift -l worker playbook/max_msg_size_check.yml > ${ANSIBLEOUT}
 
     if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
-        log "ERROR: Maximum allowable size of messages in bytes should be set to 65536. Please update the kernel.msgmax parameter in /etc/sysctl.conf" result
+        log "ERROR: Maximum allowable size of messages in bytes should be set to at least 65536. Please update the kernel.msgmax parameter in /etc/sysctl.conf" result
         cat ${ANSIBLEOUT} >> ${OUTPUT}
         ERROR=1
 	ERR=1
@@ -478,7 +478,7 @@ function check_message_limit(){
     ansible-playbook -i hosts_openshift -l worker playbook/max_queue_size_check.yml > ${ANSIBLEOUT}
 
     if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
-        log "ERROR: Maximum allowable size of message queue in bytes should be set to 65536. Please update the kernel.msgmnb parameter in /etc/sysctl.conf" result
+        log "ERROR: Maximum allowable size of message queue in bytes should be set to at least 65536. Please update the kernel.msgmnb parameter in /etc/sysctl.conf" result
         cat ${ANSIBLEOUT} >> ${OUTPUT}
         ERROR=1
 	ERR=1
@@ -488,7 +488,7 @@ function check_message_limit(){
     ansible-playbook -i hosts_openshift -l worker playbook/max_num_queue_check.yml > ${ANSIBLEOUT}
 
     if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
-        log "ERROR: Maximum number of queue identifiers should be set to 32768. Please update the kernel.msgmni parameter in /etc/sysctl.conf" result
+        log "ERROR: Maximum number of queue identifiers should be set to at least 32768. Please update the kernel.msgmni parameter in /etc/sysctl.conf" result
         cat ${ANSIBLEOUT} >> ${OUTPUT}
         ERROR=1
 	ERR=1
@@ -515,7 +515,7 @@ function check_shm_limit(){
     ansible-playbook -i hosts_openshift -l worker playbook/tot_page_shm_check.yml > ${ANSIBLEOUT}
 
     if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
-        log "ERROR: kernel.shmall should be set to 33554432. Please update /etc/sysctl.conf" result
+        log "ERROR: kernel.shmall should be set to at least 33554432. Please update /etc/sysctl.conf" result
         cat ${ANSIBLEOUT} >> ${OUTPUT}
         ERROR=1
 	ERR=1
@@ -525,7 +525,7 @@ function check_shm_limit(){
     ansible-playbook -i hosts_openshift -l worker playbook/max_shm_check.yml > ${ANSIBLEOUT}
 
     if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
-        log "ERROR: kernel.shmmax should be set to 68719476736. Please update /etc/sysctl.conf" result
+        log "ERROR: kernel.shmmax should be set to at least 68719476736. Please update /etc/sysctl.conf" result
         cat ${ANSIBLEOUT} >> ${OUTPUT}
         ERROR=1
 	ERR=1
@@ -535,7 +535,7 @@ function check_shm_limit(){
     ansible-playbook -i hosts_openshift -l worker playbook/max_num_shm_check.yml > ${ANSIBLEOUT}
 
     if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
-        log "ERROR: kernel.shmmni should be set to 16384. Please update /etc/sysctl.conf" result
+        log "ERROR: kernel.shmmni should be set to at least 16384. Please update /etc/sysctl.conf" result
         cat ${ANSIBLEOUT} >> ${OUTPUT}
         ERROR=1
 	ERR=1
@@ -582,7 +582,7 @@ function check_sem_limit() {
     ansible-playbook -i hosts_openshift -l worker playbook/kern_sem_check.yml > ${ANSIBLEOUT}
 
     if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
-        log "ERROR: kernel.sem must equal 250 1024000 100 16384. Please update /etc/sysctl.conf" result
+        log "ERROR: kernel.sem values must be at least 250 1024000 100 16384. Please update /etc/sysctl.conf" result
         cat ${ANSIBLEOUT} >> ${OUTPUT}
         ERROR=1
     else
@@ -602,7 +602,7 @@ function check_max_files(){
     ansible-playbook -i hosts_openshift -l worker playbook/max_files_compute_check.yml > ${ANSIBLEOUT}
 
     if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
-        log "ERROR: Maximum number of open files should equal 66560. Please update /etc/sysconfig/docker" result
+        log "ERROR: Maximum number of open files should be at least 66560. Please update /etc/sysconfig/docker" result
         cat ${ANSIBLEOUT} >> ${OUTPUT}
         ERROR=1
     else
@@ -622,7 +622,7 @@ function check_max_process(){
     ansible-playbook -i hosts_openshift -l worker playbook/max_process_compute_check.yml > ${ANSIBLEOUT}
 
     if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
-        log "ERROR: Maximum number of processes should equal 12288. Please update /etc/sysconfig/docker" result
+        log "ERROR: Maximum number of processes should be at least 12288. Please update /etc/sysconfig/docker" result
         cat ${ANSIBLEOUT} >> ${OUTPUT}
         ERROR=1
     else
@@ -689,7 +689,7 @@ elif [[ ${POST} -eq 1 ]]; then
     check_openshift_version
     check_crio_version
     check_shm_limit
-    check_disk_encryption
+#    check_disk_encryption
     check_sem_limit
     check_max_files
     check_max_process

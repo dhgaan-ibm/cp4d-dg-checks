@@ -682,10 +682,10 @@ if [[ ${PRE} -eq 1 ]]; then
 #    check_dockerdir_type
     check_unblocked_urls
 elif [[ ${POST} -eq 1 ]]; then
-#    check_fix_clocksync
-#    check_kernel_vm
-#    check_message_limit
-#    check_timeout_settings
+    check_fix_clocksync
+    check_kernel_vm
+    check_message_limit
+    check_timeout_settings
     check_openshift_version
     check_crio_version
     check_shm_limit

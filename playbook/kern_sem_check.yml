@@ -20,3 +20,5 @@
     shell: echo "kernel semaphore parameter is not properly configured."
     register: output
     failed_when: kern_sem.stdout != "kernel.sem = 250\t1024000\t100\t16384"
+
+#   failed_when: kern_sem.stdout.split("\t")[0] < 250

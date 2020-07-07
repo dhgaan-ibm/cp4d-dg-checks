@@ -19,4 +19,4 @@
   - name: Check total number of shared memory pages
     shell: grep -Eo [0-9]* <<< "{{ kern_shmall.stdout }}"
     register: output
-    failed_when: output.stdout|int != 33554432
+    failed_when: output.stdout|int < 33554432

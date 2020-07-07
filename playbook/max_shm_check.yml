@@ -19,4 +19,4 @@
   - name: Check max number of shared memory segments
     shell: grep -Eo [0-9]* <<< "{{ kern_shmmax.stdout }}"
     register: output
-    failed_when: output.stdout|int != 68719476736
+    failed_when: output.stdout|int < 68719476736

@@ -468,36 +468,93 @@ function check_message_limit(){
     ansible-playbook -i hosts_openshift -l worker playbook/max_msg_size_check.yml > ${ANSIBLEOUT}
 
     if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
-        log "ERROR: Maximum allowable size of messages in bytes should be set to 65536." result
+        log "ERROR: Maximum allowable size of messages in bytes should be set to 65536. Please update the kernel.msgmax parameter in /etc/sysctl.conf" result
         cat ${ANSIBLEOUT} >> ${OUTPUT}
         ERROR=1
+	ERR=1
+	printout "$result"
     fi
 
     ansible-playbook -i hosts_openshift -l worker playbook/max_queue_size_check.yml > ${ANSIBLEOUT}
 
     if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
-        log "ERROR: Maximum allowable size of message queue in bytes should be set to 65536." result
+        log "ERROR: Maximum allowable size of message queue in bytes should be set to 65536. Please update the kernel.msgmnb parameter in /etc/sysctl.conf" result
         cat ${ANSIBLEOUT} >> ${OUTPUT}
         ERROR=1
+	ERR=1
+	printout "$result"
     fi
 
     ansible-playbook -i hosts_openshift -l worker playbook/max_num_queue_check.yml > ${ANSIBLEOUT}
 
     if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
-        log "ERROR: Maximum number of queue identifiers should be set to 32768." result
+        log "ERROR: Maximum number of queue identifiers should be set to 32768. Please update the kernel.msgmni parameter in /etc/sysctl.conf" result
         cat ${ANSIBLEOUT} >> ${OUTPUT}
         ERROR=1
-    else
+	ERR=1
+	printout "$result"
+    fi
+
+    if [[ ${ERR} -eq 0 ]]; then
         log "[Passed]" result
     fi
+
+
     LOCALTEST=1
     output+="$result"
 
-    if [[ ${LOCALTEST} -eq 1 ]]; then
+    if [[ ${LOCALTEST} -eq 1 && ${ERR} -eq 0 ]]; then
         printout "$output"
     fi
 
 }
+
+function check_shm_limit(){
+    output=""
+    echo -e "\nChecking shared memory limits on compute nodes" | tee -a ${OUTPUT}
+    ansible-playbook -i hosts_openshift -l worker playbook/tot_page_shm_check.yml > ${ANSIBLEOUT}
+
+    if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
+        log "ERROR: kernel.shmall should be set to 33554432. Please update /etc/sysctl.conf" result
+        cat ${ANSIBLEOUT} >> ${OUTPUT}
+        ERROR=1
+	ERR=1
+	printout "$result"
+    fi
+
+    ansible-playbook -i hosts_openshift -l worker playbook/max_shm_check.yml > ${ANSIBLEOUT}
+
+    if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
+        log "ERROR: kernel.shmmax should be set to 68719476736. Please update /etc/sysctl.conf" result
+        cat ${ANSIBLEOUT} >> ${OUTPUT}
+        ERROR=1
+	ERR=1
+	printout "$result"
+    fi
+
+    ansible-playbook -i hosts_openshift -l worker playbook/max_num_shm_check.yml > ${ANSIBLEOUT}
+
+    if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
+        log "ERROR: kernel.shmmni should be set to 16384. Please update /etc/sysctl.conf" result
+        cat ${ANSIBLEOUT} >> ${OUTPUT}
+        ERROR=1
+	ERR=1
+	printout "$result"
+    fi
+
+    if [[ ${ERR} -eq 0 ]]; then
+        log "[Passed]" result
+    fi
+
+    LOCALTEST=1
+    output+="$result"
+
+    if [[ ${LOCALTEST} -eq 1 && ${ERR} -eq 0 ]]; then
+        printout "$output"
+    fi
+
+}
+
 
 if [[ $# -lt 1 ]]; then
     echo -e "Please specify pre/post. i.e. --phase=[pre_openshift|post_openshift]"
@@ -550,7 +607,8 @@ elif [[ ${POST} -eq 1 ]]; then
 #    check_message_limit
 #    check_timeout_settings
     check_openshift_version
-    function check_crio_version
+    check_crio_version
+    check_shm_limit
 fi
 
 if [[ ${ERROR} -eq 1 ]]; then

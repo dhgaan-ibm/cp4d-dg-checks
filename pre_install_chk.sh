@@ -447,7 +447,7 @@ function check_kernel_vm(){
     ansible-playbook -i hosts_openshift -l worker playbook/kern_vm_check.yml > ${ANSIBLEOUT}
 
     if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
-        log "ERROR: Kernel virtual memory on compute nodes should be set to 262144. Run 'sysctl vm.max_map_count' to see the current value." result
+        log "ERROR: Kernel virtual memory on compute nodes should be set to 262144. Please update the vm.max_map_count parameter in /etc/sysctl.conf" result
         cat ${ANSIBLEOUT} >> ${OUTPUT}
         WARNING=1
     else
@@ -555,6 +555,86 @@ function check_shm_limit(){
 
 }
 
+function check_disk_encryption() {
+    output=""
+    echo -e "\nChecking Disk Encryption" | tee -a ${OUTPUT}
+    ansible-playbook -i hosts_openshift -l ${hosts} playbook/disk_encryption_check.yml > ${ANSIBLEOUT}
+
+    if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
+        log "ERROR: LUKS Encryption is not enabled." result
+        cat ${ANSIBLEOUT} >> ${OUTPUT}
+        ERROR=1
+    else
+        log "[Passed]" result
+    fi
+    LOCALTEST=1
+    output+="$result"
+
+    if [[ ${LOCALTEST} -eq 1 ]]; then
+        printout "$output"
+    fi
+
+}
+
+function check_sem_limit() {
+    output=""
+    echo -e "\nChecking kernel semaphore limit on compute nodes" | tee -a ${OUTPUT}
+    ansible-playbook -i hosts_openshift -l worker playbook/kern_sem_check.yml > ${ANSIBLEOUT}
+
+    if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
+        log "ERROR: kernel.sem must equal 250 1024000 100 16384. Please update /etc/sysctl.conf" result
+        cat ${ANSIBLEOUT} >> ${OUTPUT}
+        ERROR=1
+    else
+        log "[Passed]" result
+    fi
+    LOCALTEST=1
+    output+="$result"
+
+    if [[ ${LOCALTEST} -eq 1 ]]; then
+        printout "$output"
+    fi
+}
+
+function check_max_files(){
+    output=""
+    echo -e "\nChecking maximum number of open files on compute nodes" | tee -a ${OUTPUT}
+    ansible-playbook -i hosts_openshift -l worker playbook/max_files_compute_check.yml > ${ANSIBLEOUT}
+
+    if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
+        log "ERROR: Maximum number of open files should equal 66560. Please update /etc/sysconfig/docker" result
+        cat ${ANSIBLEOUT} >> ${OUTPUT}
+        ERROR=1
+    else
+        log "[Passed]" result
+    fi
+    LOCALTEST=1
+    output+="$result"
+
+    if [[ ${LOCALTEST} -eq 1 ]]; then
+        printout "$output"
+    fi
+}
+
+function check_max_process(){
+    output=""
+    echo -e "\nChecking maximum number of processes on compute nodes" | tee -a ${OUTPUT}
+    ansible-playbook -i hosts_openshift -l worker playbook/max_process_compute_check.yml > ${ANSIBLEOUT}
+
+    if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
+        log "ERROR: Maximum number of processes should equal 12288. Please update /etc/sysconfig/docker" result
+        cat ${ANSIBLEOUT} >> ${OUTPUT}
+        ERROR=1
+    else
+        log "[Passed]" result
+    fi
+    LOCALTEST=1
+    output+="$result"
+
+    if [[ ${LOCALTEST} -eq 1 ]]; then
+        printout "$output"
+    fi
+}
 
 if [[ $# -lt 1 ]]; then
     echo -e "Please specify pre/post. i.e. --phase=[pre_openshift|post_openshift]"
@@ -609,6 +689,10 @@ elif [[ ${POST} -eq 1 ]]; then
     check_openshift_version
     check_crio_version
     check_shm_limit
+    check_disk_encryption
+    check_sem_limit
+    check_max_files
+    check_max_process
 fi
 
 if [[ ${ERROR} -eq 1 ]]; then

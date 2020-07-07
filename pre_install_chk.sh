@@ -35,14 +35,65 @@ function printout() {
 function check_openshift_version() {
     output=""
     echo -e "\nChecking Openshift Version" | tee -a ${OUTPUT}
-    os_version = 
+    ansible-playbook -i hosts_openshift -l ${hosts} playbook/check_oc_ver.yml > ${ANSIBLEOUT}
  
+    if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
+        log "ERROR: Your version of Openshift is not compatible with Cloud Pak 4 Data. Please update to either version 3.11 or 4.3." result
+        cat ${ANSIBLEOUT} >> ${OUTPUT}
+        ERROR=1
+    else
+        log "[Passed]" result
+    fi
+    LOCALTEST=1
+    output+="$result"
+
+    if [[ ${LOCALTEST} -eq 1 ]]; then
+        printout "$output"
+    fi
+
+}
+
+function check_crio_version() {
+    output=""
+    echo -e "\nChecking CRI-O Version" | tee -a ${OUTPUT}
+    ansible-playbook -i hosts_openshift -l ${hosts} playbook/check_crio_version.yml > ${ANSIBLEOUT}
+
+    if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
+        log "ERROR: Version of CRI-O must be at least 1.13." result
+        cat ${ANSIBLEOUT} >> ${OUTPUT}
+        ERROR=1
+    else
+        log "[Passed]" result
+    fi
+    LOCALTEST=1
+    output+="$result"
+
+    if [[ ${LOCALTEST} -eq 1 ]]; then
+        printout "$output"
+    fi
+
 } 
 
 function check_timeout_settings(){
     output=""
     echo -e "\nChecking Timeout Settings on Load Balancer" | tee -a ${OUTPUT}
-    ansible-playbook -i hosts_openshift -l bastion playbook/dnsconfig_check.yml > ${ANSIBLEOUT}
+    ansible-playbook -i hosts_openshift -l bastion playbook/check_timeout_settings.yml > ${ANSIBLEOUT}
+
+    if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
+        log "ERROR: Your HAProxy client and server timeout settings are below 5 minutes. 
+Please update your /etc/haproxy/haproxy.cfg file. 
+Visit https://www.ibm.com/support/knowledgecenter/SSQNUZ_3.0.1/cpd/install/node-settings.html#node-settings__lb-proxy for update commands." result
+        cat ${ANSIBLEOUT} >> ${OUTPUT}
+        ERROR=1
+    else
+        log "[Passed]" result
+    fi
+    LOCALTEST=1
+    output+="$result"
+
+    if [[ ${LOCALTEST} -eq 1 ]]; then
+        printout "$output"
+    fi
  
 }
 
@@ -494,9 +545,12 @@ if [[ ${PRE} -eq 1 ]]; then
 #    check_dockerdir_type
     check_unblocked_urls
 elif [[ ${POST} -eq 1 ]]; then
-    check_fix_clocksync
-    check_kernel_vm
-    check_message_limit
+#    check_fix_clocksync
+#    check_kernel_vm
+#    check_message_limit
+#    check_timeout_settings
+    check_openshift_version
+    function check_crio_version
 fi
 
 if [[ ${ERROR} -eq 1 ]]; then

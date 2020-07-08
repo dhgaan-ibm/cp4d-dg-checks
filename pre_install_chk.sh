@@ -675,7 +675,7 @@ function check_scc_anyuid(){
     echo "${scc_anyuid}"
     scc_line_count=$(oc describe scc anyuid | grep -e system:authenticated -e system:serviceaccounts | wc -l)
 
-    if [[ scc_line_count -gt 0 ]]; then
+    if [[ ${scc_line_count} -gt 0 ]]; then
         log "ERROR: system:authenticated and/or system:serviceaccounts should not be in scc anyuid. Run oc edit scc anyuid to update" result
         ERROR=1
     else
@@ -689,6 +689,48 @@ function check_scc_anyuid(){
     fi
 }
 
+function check_cluster_admin(){
+    output=""
+    echo -e "\nChecking for cluster-admin account" | tee -a ${OUTPUT}
+    cluster_admin=$(oc get clusterrolebindings/cluster-admin)
+    echo "${cluster_admin}"
+    exists=$(oc get clusterrolebindings/cluster-admin | egrep 'not found')
+
+    if [[ ${exists} ]]; then
+        log "ERROR: cluster-admin role not assigned. Ask cluster-admin for binding." result
+        ERROR=1
+    else
+        log "[Passed]" result
+    fi
+    LOCALTEST=1
+    output+="$result"
+
+    if [[ ${LOCALTEST} -eq 1 ]]; then
+        printout "$output"
+    fi
+}
+
+function check_admin_role(){
+    output=""
+    echo -e "\nChecking for admin role" | tee -a ${OUTPUT}
+    whoami=$(oc whoami)
+    echo "whoami = ${whoami}"
+    exists=$(oc get rolebindings admin | egrep '${whoami}')
+    echo "${exists}"
+
+    if [[ ${exists} -eq "" ]]; then
+        log "ERROR: output of oc whoami does not exist in oc get rolebindings admin. Ask cluster-admin for binding." result
+        ERROR=1
+    else
+        log "[Passed]" result
+    fi
+    LOCALTEST=1
+    output+="$result"
+
+    if [[ ${LOCALTEST} -eq 1 ]]; then
+        printout "$output"
+    fi
+}
 
 
 #BEGIN CHECK
@@ -761,11 +803,13 @@ elif [[ ${POST} -eq 1 ]]; then
     check_max_process
 #    check_scc_anyuid
 elif [[ ${PRE_CPD} -eq 1 ]]; then
-#    check_kernel_vm
-#    check_message_limit
-#    check_shm_limit
-#    check_sem_limit
+    check_kernel_vm
+    check_message_limit
+    check_shm_limit
+    check_sem_limit
     check_scc_anyuid
+    check_cluster_admin
+    check_admin_role
 fi
 
 if [[ ${ERROR} -eq 1 ]]; then

@@ -18,6 +18,7 @@
     - name: Check subnet mask
       shell: ip addr show | grep -o {{ ip_addr }}/[0-9]*
       register: ip_slash
+      failed_when: ip_addr | ipaddr(ip_slash.stdout) | ipaddr('bool') == 'false'
     - debug:
         var: ip_slash.stdout
 

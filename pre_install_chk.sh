@@ -7,16 +7,14 @@ ANSIBLEOUT="/tmp/preInstallAnsible"
 rm -f ${OUTPUT}
 rm -f ${ANSIBLEOUT}
 
-#user variables
-PRE=0
-POST=0
+#user variables, modify these to change the default hosts you would like this script to run on
 hosts=bastion
 compute=worker
 
 #global variables
 GLOBAL=(https://www.ibm.com/support/knowledgecenter/SSQNUZ_3.0.1/cpd/install/node-settings.html#node-settings__lb-proxy)
 
-#These urls should be unblocked. check_unblocked_urls will validate that these are reachable
+#These urls should be unblocked. The function check_unblocked_urls will validate that these are reachable
 URLS=(
         http://registry.ibmcloudpack.com/cpd301/
         https://registry.redhat.io
@@ -103,7 +101,7 @@ function check_openshift_version() {
 
 function check_crio_version() {
     output=""
-    echo -e "\nChecking CRI-O Version" | tee -a ${OUTPUT}
+    echo -e "\nChecking CRI-O Version. Note: this test is being tested on master nodes." | tee -a ${OUTPUT}
     ansible-playbook -i hosts_openshift -l master playbook/check_crio_version.yml > ${ANSIBLEOUT}
 
     if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
@@ -195,7 +193,7 @@ function check_subnet(){
     ansible-playbook -i hosts_openshift -l ${hosts} playbook/check_subnet.yml > ${ANSIBLEOUT}
     
     if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
-        log "ERROR:." result
+        log "ERROR: Host ip not in range" result
         cat ${ANSIBLEOUT} >> ${OUTPUT}
         ERROR=1
     else
@@ -380,25 +378,6 @@ function check_unblocked_urls(){
     output=""
     echo -e "\nChecking connectivity to required links. This test should take a couple minutes" | tee -a ${OUTPUT}
     BLOCKED=0
-#    URLS=(
-#	http://registry.ibmcloudpack.com/cpd301/
-#	https://registry.redhat.io
-#	https://quay.io
-#	https://sso.redhat.com
-#	https://github.com/IBM
-#	https://cp.icr.io
-#	https://us.icr.io
-#	https://gcr.io
-#	https://k8s.gcr.io
-#	https://quay.io
-#	https://docker.io
-#	https://raw.github.com
-#	https://myibm.ibm.com
-#	https://www.ibm.com/software/passportadvantage/pao_customer.html
-#	https://www.ibm.com/support/knowledgecenter
-#	http://registry.ibmcloudpack.com/
-#	https://docs.portworx.com
- #   )
     for i in "${URLS[@]}"
     do
        :
@@ -605,8 +584,8 @@ function check_shm_limit(){
 
 function check_disk_encryption() {
     output=""
-    echo -e "\nChecking Disk Encryption" | tee -a ${OUTPUT}
-    ansible-playbook -i hosts_openshift -l ${hosts} playbook/disk_encryption_check.yml > ${ANSIBLEOUT}
+    echo -e "\nChecking Disk Encryption. Note: This test is being tested on all core nodes" | tee -a ${OUTPUT}
+    ansible-playbook -i hosts_openshift -l core playbook/disk_encryption_check.yml > ${ANSIBLEOUT}
 
     if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
         log "WARNING: LUKS Encryption is not enabled." result
@@ -684,9 +663,31 @@ function check_max_process(){
     fi
 }
 
+function check_scc_anyuid(){
+    output=""
+    echo -e "\nChecking that no user group is defined under scc anyuid" | tee -a ${OUTPUT}
+    ansible-playbook -i hosts_openshift -l bastion playbook/scc_anyuid_check.yml > ${ANSIBLEOUT}
+
+    if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
+        log "ERROR: system:authenticated and system:serviceaccounts should not be in scc anyuid" result
+        cat ${ANSIBLEOUT} >> ${OUTPUT}
+        ERROR=1
+    else
+        log "[Passed]" result
+    fi
+    LOCALTEST=1
+    output+="$result"
+
+    if [[ ${LOCALTEST} -eq 1 ]]; then
+        printout "$output"
+    fi
+}
+
 
 
 #BEGIN CHECK
+PRE=0
+POST=0
 
 if [[ $# -lt 1 ]]; then
     usage
@@ -727,6 +728,7 @@ fi
 if [[ ${PRE} -eq 1 ]]; then
     validate_internet_connectivity
     validate_ips
+    check_subnet
     check_dnsconfiguration
     check_processor
     check_dnsresolve

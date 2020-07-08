@@ -38,23 +38,28 @@ URLS=(
 
 function usage(){
     echo ""
-    echo "This script checks if all nodes meet requirements for OpenShift and CPD installation."
+    echo -e "\033[0;32mThis script checks if all nodes meet requirements for OpenShift and CPD installation.\033[0m"
     echo ""
-    echo "Arguments: "
-    echo "--phase=[pre_openshift|post_openshift]                         To specify installation type"
-    echo "--host_type=[core|worker|master|bastion]                       To specify nodes to check (Default is bastion)."
-    echo "--compute=[worker|compute]                                     To specify compute nodes as listed in hosts_openshift for kernel parameter checks (Default is worker)"
+    echo -e "\033[0;32mArguments:\033[0m "
+    echo "
+	--phase=[pre_ocp|post_ocp|pre_cpd]                       To specify installation type"
+    echo "	
+	--host_type=[core|worker|master|bastion]                 To specify nodes to check (Default is bastion).
+	The valid arguments to --host_type are the names of the groupings of nodes listed in hosts_openshift"
+    echo "
+	--compute=[worker|compute]                               To specify compute nodes as listed in hosts_openshift for kernel parameter checks (Default is worker)"
     echo ""
-    echo "The valid arguments to --host_type are the names of the groupings of nodes listed in hosts_openshift"
-    echo "NOTE: If any test displays a 'Could not match supplied host pattern' warning, you will have to modify the hosts_openshift inventory file so that your nodes are correctly grouped, or utilize the --host_type argument to pass in the correct group of nodes to be tested. Some tests are configured to only be ran on certain groups."
+#    echo "The valid arguments to --host_type are the names of the groupings of nodes listed in hosts_openshift"
+    echo -e "\033[0;34mNOTE: If any test displays a 'Could not match supplied host pattern' warning, you will have to modify the hosts_openshift inventory file so that your nodes are correctly grouped, or utilize the --host_type argument to pass in the correct group of nodes to be tested. 
+Some tests are configured to only be ran on certain groups.\033[0m"
     echo ""
-    echo "Example Script Calls: "
+    echo -e "\033[0;32mExample Script Calls:\033[0m "
     echo "./pre_install_chk.sh --phase=pre_openshift"
     echo "./pre_install_chk.sh --phase=post_openshift --host_type=core"
     echo ""
-    echo "This script takes advantage of ansible playbooks to perform its checks.
+    echo -e "\033[0;34mThis script takes advantage of ansible playbooks to perform its checks.
 If any test fails, you can view the results of its playbook in ${OUTPUT}
-The current value of the variable tested will appear under the 'debug' task for that particular playbook."
+The current value of the variable tested will appear under the 'debug' task for that particular playbook.\033[0m"
     echo ""
 }
 
@@ -666,11 +671,12 @@ function check_max_process(){
 function check_scc_anyuid(){
     output=""
     echo -e "\nChecking that no user group is defined under scc anyuid" | tee -a ${OUTPUT}
-    ansible-playbook -i hosts_openshift -l bastion playbook/scc_anyuid_check.yml > ${ANSIBLEOUT}
+    scc_anyuid=$(oc describe scc anyuid | grep -e system:authenticated -e system:serviceaccounts)
+    echo "${scc_anyuid}"
+    scc_line_count=$(oc describe scc anyuid | grep -e system:authenticated -e system:serviceaccounts | wc -l)
 
-    if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
-        log "ERROR: system:authenticated and system:serviceaccounts should not be in scc anyuid" result
-        cat ${ANSIBLEOUT} >> ${OUTPUT}
+    if [[ scc_line_count -gt 0 ]]; then
+        log "ERROR: system:authenticated and/or system:serviceaccounts should not be in scc anyuid. Run oc edit scc anyuid to update" result
         ERROR=1
     else
         log "[Passed]" result
@@ -688,6 +694,7 @@ function check_scc_anyuid(){
 #BEGIN CHECK
 PRE=0
 POST=0
+PRE_CPD=0
 
 if [[ $# -lt 1 ]]; then
     usage
@@ -700,12 +707,14 @@ else
 	    --phase=*)
 		CHECKTYPE="${var#*=}"
                 shift
-                if [[ "$CHECKTYPE" = "pre_openshift" ]]; then
+                if [[ "$CHECKTYPE" = "pre_ocp" ]]; then
                     PRE=1
-                elif [[ "$CHECKTYPE" = "post_openshift" ]]; then
+                elif [[ "$CHECKTYPE" = "post_ocp" ]]; then
                     POST=1
+		elif [[ "$CHECKTYPE" = "pre_cpd" ]]; then
+		    PRE_CPD=1
                 else
-                    echo "please only specify check type pre_openshift/post_openshift"
+                    echo "please only specify check type pre_ocp/post_ocp/pre_cpd"
                     exit 1
                 fi            
                 ;;
@@ -740,16 +749,23 @@ if [[ ${PRE} -eq 1 ]]; then
     check_unblocked_urls
 elif [[ ${POST} -eq 1 ]]; then
     check_fix_clocksync
-    check_kernel_vm
-    check_message_limit
+#    check_kernel_vm
+#    check_message_limit
     check_timeout_settings
     check_openshift_version
     check_crio_version
-    check_shm_limit
+#    check_shm_limit
     check_disk_encryption
-    check_sem_limit
+#    check_sem_limit
     check_max_files
     check_max_process
+#    check_scc_anyuid
+elif [[ ${PRE_CPD} -eq 1 ]]; then
+#    check_kernel_vm
+#    check_message_limit
+#    check_shm_limit
+#    check_sem_limit
+    check_scc_anyuid
 fi
 
 if [[ ${ERROR} -eq 1 ]]; then

@@ -11,36 +11,53 @@ rm -f ${ANSIBLEOUT}
 PRE=0
 POST=0
 hosts=bastion
+compute=worker
 
 #global variables
 GLOBAL=(https://www.ibm.com/support/knowledgecenter/SSQNUZ_3.0.1/cpd/install/node-settings.html#node-settings__lb-proxy)
 
+#These urls should be unblocked. check_unblocked_urls will validate that these are reachable
+URLS=(
+        http://registry.ibmcloudpack.com/cpd301/
+        https://registry.redhat.io
+        https://quay.io
+        https://sso.redhat.com
+        https://github.com/IBM
+        https://cp.icr.io
+        https://us.icr.io
+        https://gcr.io
+        https://k8s.gcr.io
+        https://quay.io
+        https://docker.io
+        https://raw.github.com
+        https://myibm.ibm.com
+        https://www.ibm.com/software/passportadvantage/pao_customer.html
+        https://www.ibm.com/support/knowledgecenter
+        http://registry.ibmcloudpack.com/
+        https://docs.portworx.com
+    )
+
+
 function usage(){
+    echo ""
     echo "This script checks if all nodes meet requirements for OpenShift and CPD installation."
+    echo ""
     echo "Arguments: "
     echo "--phase=[pre_openshift|post_openshift]                         To specify installation type"
-    echo "--host_type=[core|worker|master|bastion]                       To specify nodes to check (Default is bastion)"
-    #echo "--installpath=[installation file location]  To specify installation directory"
-    #echo "--ocuser=[openshift user]                   To specify Openshift user used for installation"
-    #echo "--ocpassword=[password]                     To specify password for Openshift user"
-    #echo "                                            Set OCPASSWORD environment variable to avoid --ocpassword command line argument"
-    echo "--help                                      To see help "
+    echo "--host_type=[core|worker|master|bastion]                       To specify nodes to check (Default is bastion)."
+    echo "--compute=[worker|compute]                                     To specify compute nodes as listed in hosts_openshift for kernel parameter checks (Default is worker)"
     echo ""
-    echo "Example: "
+    echo "The valid arguments to --host_type are the names of the groupings of nodes listed in hosts_openshift"
+    echo "NOTE: If any test displays a 'Could not match supplied host pattern' warning, you will have to modify the hosts_openshift inventory file so that your nodes are correctly grouped, or utilize the --host_type argument to pass in the correct group of nodes to be tested. Some tests are configured to only be ran on certain groups."
+    echo ""
+    echo "Example Script Calls: "
     echo "./pre_install_chk.sh --phase=pre_openshift"
     echo "./pre_install_chk.sh --phase=post_openshift --host_type=core"
-}
-
-function helper(){
-    echo "##########################################################################################
-   Help:
-    ./$(basename $0) --install=[ocp|cpd] --installpath=[installation file location]
-                     --ocuser=[openshift user] --ocpassword=[password]
-    Specify install type, installation directory, Openshift user and password to start the validation.
-    Run it without "--fix" option to find out any issue on the cluster. 
-    Next run with  "--fix" optiom to address issues on the cluster.
-    Use this pre install check before Cloud Pak for Data installation.
-##########################################################################################"
+    echo ""
+    echo "This script takes advantage of ansible playbooks to perform its checks.
+If any test fails, you can view the results of its playbook in ${OUTPUT}
+The current value of the variable tested will appear under the 'debug' task for that particular playbook."
+    echo ""
 }
 
 
@@ -113,7 +130,7 @@ function check_timeout_settings(){
     if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
         log "ERROR: Your HAProxy client and server timeout settings are below 5 minutes. 
 Please update your /etc/haproxy/haproxy.cfg file. 
-Visit https://www.ibm.com/support/knowledgecenter/SSQNUZ_3.0.1/cpd/install/node-settings.html#node-settings__lb-proxy for update commands." result
+Visit ${GLOBAL[0]} for update commands" result
         cat ${ANSIBLEOUT} >> ${OUTPUT}
         ERROR=1
     else
@@ -361,34 +378,34 @@ function check_diskthroughput(){
 
 function check_unblocked_urls(){
     output=""
-    echo -e "\nChecking connectivity to required links" | tee -a ${OUTPUT}
+    echo -e "\nChecking connectivity to required links. This test should take a couple minutes" | tee -a ${OUTPUT}
     BLOCKED=0
-    URLS=(
-	http://registry.ibmcloudpack.com/cpd301/
-	https://registry.redhat.io
-	https://quay.io
-	https://sso.redhat.com
-	https://github.com/IBM
-	https://cp.icr.io
-	https://us.icr.io
-	https://gcr.io
-	https://k8s.gcr.io
-	https://quay.io
-	https://docker.io
-	https://raw.github.com
-	https://myibm.ibm.com
-	https://www.ibm.com/software/passportadvantage/pao_customer.html
-	https://www.ibm.com/support/knowledgecenter
-	http://registry.ibmcloudpack.com/
-	https://docs.portworx.com
-    )
+#    URLS=(
+#	http://registry.ibmcloudpack.com/cpd301/
+#	https://registry.redhat.io
+#	https://quay.io
+#	https://sso.redhat.com
+#	https://github.com/IBM
+#	https://cp.icr.io
+#	https://us.icr.io
+#	https://gcr.io
+#	https://k8s.gcr.io
+#	https://quay.io
+#	https://docker.io
+#	https://raw.github.com
+#	https://myibm.ibm.com
+#	https://www.ibm.com/software/passportadvantage/pao_customer.html
+#	https://www.ibm.com/support/knowledgecenter
+#	http://registry.ibmcloudpack.com/
+#	https://docs.portworx.com
+ #   )
     for i in "${URLS[@]}"
     do
        :
        ansible-playbook -i hosts_openshift -l ${hosts} playbook/url_check.yml -e "url=$i" > ${ANSIBLEOUT}
 
     if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
-        log "WARNING: $i is not reachable." result
+        log "WARNING: $i is not reachable. Enabling proxy might fix this issue." result
         cat ${ANSIBLEOUT} >> ${OUTPUT}
         WARNING=1
         BLOCKED=1
@@ -475,7 +492,7 @@ function check_fix_clocksync(){
 function check_kernel_vm(){
     output=""
     echo -e "\nChecking kernel virtual memory on compute nodes" | tee -a ${OUTPUT}
-    ansible-playbook -i hosts_openshift -l worker playbook/kern_vm_check.yml > ${ANSIBLEOUT}
+    ansible-playbook -i hosts_openshift -l ${compute} playbook/kern_vm_check.yml > ${ANSIBLEOUT}
 
     if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
         log "ERROR: Kernel virtual memory on compute nodes should be set to at least 262144. Please update the vm.max_map_count parameter in /etc/sysctl.conf" result
@@ -496,7 +513,7 @@ function check_kernel_vm(){
 function check_message_limit(){
     output=""
     echo -e "\nChecking message limits on compute nodes" | tee -a ${OUTPUT}
-    ansible-playbook -i hosts_openshift -l worker playbook/max_msg_size_check.yml > ${ANSIBLEOUT}
+    ansible-playbook -i hosts_openshift -l ${compute} playbook/max_msg_size_check.yml > ${ANSIBLEOUT}
 
     if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
         log "ERROR: Maximum allowable size of messages in bytes should be set to at least 65536. Please update the kernel.msgmax parameter in /etc/sysctl.conf" result
@@ -506,7 +523,7 @@ function check_message_limit(){
 	printout "$result"
     fi
 
-    ansible-playbook -i hosts_openshift -l worker playbook/max_queue_size_check.yml > ${ANSIBLEOUT}
+    ansible-playbook -i hosts_openshift -l ${compute} playbook/max_queue_size_check.yml > ${ANSIBLEOUT}
 
     if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
         log "ERROR: Maximum allowable size of message queue in bytes should be set to at least 65536. Please update the kernel.msgmnb parameter in /etc/sysctl.conf" result
@@ -516,7 +533,7 @@ function check_message_limit(){
 	printout "$result"
     fi
 
-    ansible-playbook -i hosts_openshift -l worker playbook/max_num_queue_check.yml > ${ANSIBLEOUT}
+    ansible-playbook -i hosts_openshift -l ${compute} playbook/max_num_queue_check.yml > ${ANSIBLEOUT}
 
     if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
         log "ERROR: Maximum number of queue identifiers should be set to at least 32768. Please update the kernel.msgmni parameter in /etc/sysctl.conf" result
@@ -543,7 +560,7 @@ function check_message_limit(){
 function check_shm_limit(){
     output=""
     echo -e "\nChecking shared memory limits on compute nodes" | tee -a ${OUTPUT}
-    ansible-playbook -i hosts_openshift -l worker playbook/tot_page_shm_check.yml > ${ANSIBLEOUT}
+    ansible-playbook -i hosts_openshift -l ${compute} playbook/tot_page_shm_check.yml > ${ANSIBLEOUT}
 
     if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
         log "ERROR: kernel.shmall should be set to at least 33554432. Please update /etc/sysctl.conf" result
@@ -553,7 +570,7 @@ function check_shm_limit(){
 	printout "$result"
     fi
 
-    ansible-playbook -i hosts_openshift -l worker playbook/max_shm_check.yml > ${ANSIBLEOUT}
+    ansible-playbook -i hosts_openshift -l ${compute} playbook/max_shm_check.yml > ${ANSIBLEOUT}
 
     if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
         log "ERROR: kernel.shmmax should be set to at least 68719476736. Please update /etc/sysctl.conf" result
@@ -563,7 +580,7 @@ function check_shm_limit(){
 	printout "$result"
     fi
 
-    ansible-playbook -i hosts_openshift -l worker playbook/max_num_shm_check.yml > ${ANSIBLEOUT}
+    ansible-playbook -i hosts_openshift -l ${compute} playbook/max_num_shm_check.yml > ${ANSIBLEOUT}
 
     if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
         log "ERROR: kernel.shmmni should be set to at least 16384. Please update /etc/sysctl.conf" result
@@ -610,7 +627,7 @@ function check_disk_encryption() {
 function check_sem_limit() {
     output=""
     echo -e "\nChecking kernel semaphore limit on compute nodes" | tee -a ${OUTPUT}
-    ansible-playbook -i hosts_openshift -l worker playbook/kern_sem_check.yml > ${ANSIBLEOUT}
+    ansible-playbook -i hosts_openshift -l ${compute} playbook/kern_sem_check.yml > ${ANSIBLEOUT}
 
     if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
         log "ERROR: kernel.sem values must be at least 250 1024000 100 16384. Please update /etc/sysctl.conf" result
@@ -630,7 +647,7 @@ function check_sem_limit() {
 function check_max_files(){
     output=""
     echo -e "\nChecking maximum number of open files on compute nodes" | tee -a ${OUTPUT}
-    ansible-playbook -i hosts_openshift -l worker playbook/max_files_compute_check.yml > ${ANSIBLEOUT}
+    ansible-playbook -i hosts_openshift -l ${compute} playbook/max_files_compute_check.yml > ${ANSIBLEOUT}
 
     if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
         log "ERROR: Maximum number of open files should be at least 66560. Please update /etc/sysconfig/docker" result
@@ -650,7 +667,7 @@ function check_max_files(){
 function check_max_process(){
     output=""
     echo -e "\nChecking maximum number of processes on compute nodes" | tee -a ${OUTPUT}
-    ansible-playbook -i hosts_openshift -l worker playbook/max_process_compute_check.yml > ${ANSIBLEOUT}
+    ansible-playbook -i hosts_openshift -l ${compute} playbook/max_process_compute_check.yml > ${ANSIBLEOUT}
 
     if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
         log "ERROR: Maximum number of processes should be at least 12288. Please update /etc/sysconfig/docker" result
@@ -666,6 +683,10 @@ function check_max_process(){
         printout "$output"
     fi
 }
+
+
+
+#BEGIN CHECK
 
 if [[ $# -lt 1 ]]; then
     usage
@@ -694,23 +715,26 @@ else
 		hosts=${HOSTTYPE}
 		;;
 
+	    --compute=*)
+                COMPUTETYPE="${var#*=}"
+		shift
+		compute=${COMPUTETYPE}
+
 	esac
 	done
 fi
 
 if [[ ${PRE} -eq 1 ]]; then
-#    validate_internet_connectivity
-#    validate_ips
-#    check_dnsconfiguration
-#    check_processor
-#    check_dnsresolve
-#    check_gateway
-#    check_hostname
-#    check_disklatency
-#    check_diskthroughput
-#    check_ibmartifactory
-#    check_redhatartifactory
-#    check_dockerdir_type
+    validate_internet_connectivity
+    validate_ips
+    check_dnsconfiguration
+    check_processor
+    check_dnsresolve
+    check_gateway
+    check_hostname
+    check_disklatency
+    check_diskthroughput
+    check_dockerdir_type
     check_unblocked_urls
 elif [[ ${POST} -eq 1 ]]; then
     check_fix_clocksync

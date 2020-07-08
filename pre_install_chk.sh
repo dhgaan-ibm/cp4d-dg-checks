@@ -609,9 +609,9 @@ function check_disk_encryption() {
     ansible-playbook -i hosts_openshift -l ${hosts} playbook/disk_encryption_check.yml > ${ANSIBLEOUT}
 
     if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
-        log "ERROR: LUKS Encryption is not enabled." result
+        log "WARNING: LUKS Encryption is not enabled." result
         cat ${ANSIBLEOUT} >> ${OUTPUT}
-        ERROR=1
+        WARNING=1
     else
         log "[Passed]" result
     fi
@@ -744,7 +744,7 @@ elif [[ ${POST} -eq 1 ]]; then
     check_openshift_version
     check_crio_version
     check_shm_limit
-#    check_disk_encryption
+    check_disk_encryption
     check_sem_limit
     check_max_files
     check_max_process

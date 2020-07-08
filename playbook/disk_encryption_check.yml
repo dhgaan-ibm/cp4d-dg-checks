@@ -9,16 +9,16 @@
 
   tasks:
   - name: Populate Variable
-    shell: lsblk
-    register: devices_list
+    shell: lsblk -f | grep 'crypto_LUKS'
+    register: luks_device
 
   - debug:
-      var: devices_list.stdout
+      var: luks_device.stdout
 
   - name: Check luks enabled
-    shell: grep 'luks' <<< "{{ devices_list.stdout }}" | wc -l
+    shell: grep 'crypto_LUKS' <<< "{{ luks_device.stdout }}" | wc -l
     register: num_luks
-    #failed_when: num_luks.stdout == 0
+    failed_when: num_luks.stdout == 0
 
   - debug:
       var: num_luks.stdout

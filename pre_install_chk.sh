@@ -8,13 +8,44 @@ rm -f ${OUTPUT}
 rm -f ${ANSIBLEOUT}
 
 #user variables
-disk_storage_path="{{ disk_st_path }}"
 PRE=0
 POST=0
 hosts=bastion
 
 #global variables
-GLOBAL=(3.11, 4.3)
+GLOBAL=(https://www.ibm.com/support/knowledgecenter/SSQNUZ_3.0.1/cpd/install/node-settings.html#node-settings__lb-proxy)
+
+function usage(){
+    echo "This script checks if all nodes meet requirements for OpenShift and CPD installation."
+    echo "Arguments: "
+    echo "--phase=[pre_openshift|post_openshift]                         To specify installation type"
+    echo "--host_type=[core|worker|master|bastion]                       To specify nodes to check (Default is bastion)"
+    #echo "--installpath=[installation file location]  To specify installation directory"
+    #echo "--ocuser=[openshift user]                   To specify Openshift user used for installation"
+    #echo "--ocpassword=[password]                     To specify password for Openshift user"
+    #echo "                                            Set OCPASSWORD environment variable to avoid --ocpassword command line argument"
+    echo "--help                                      To see help "
+    echo ""
+    echo "Example: "
+    echo "./pre_install_chk.sh --phase=pre_openshift"
+    echo "./pre_install_chk.sh --phase=post_openshift --host_type=core"
+}
+
+function helper(){
+    echo "##########################################################################################
+   Help:
+    ./$(basename $0) --install=[ocp|cpd] --installpath=[installation file location]
+                     --ocuser=[openshift user] --ocpassword=[password]
+    Specify install type, installation directory, Openshift user and password to start the validation.
+    Run it without "--fix" option to find out any issue on the cluster. 
+    Next run with  "--fix" optiom to address issues on the cluster.
+    Use this pre install check before Cloud Pak for Data installation.
+##########################################################################################"
+}
+
+
+
+
 
 function log() {
     if [[ "$1" =~ ^ERROR* ]]; then
@@ -637,7 +668,7 @@ function check_max_process(){
 }
 
 if [[ $# -lt 1 ]]; then
-    echo -e "Please specify pre/post. i.e. --phase=[pre_openshift|post_openshift]"
+    usage
     exit 1
 else
     for var in "$@"

@@ -18,9 +18,9 @@ Arguments:
 
 Example Script Calls: 
 
-./pre_install_chk.sh --phase=pre_openshift
+	./pre_install_chk.sh --phase=pre_openshift
 
-./pre_install_chk.sh --phase=post_openshift --host_type=core
+	./pre_install_chk.sh --phase=post_openshift --host_type=core
 
 # Validation List
 | Validation | Requirement | Pre-OCP | Post-OCP | Pre-CPD |
@@ -51,3 +51,31 @@ Example Script Calls:
 | Cluster-admin account | | | | X |
 | Cluster-admin user must grant the cpd-admin-role to the project administration | | | | X |
 | No user group defined under scc anyuid | system:authenticated and system:serviceaccounts should not be in scc anyuid | | | X |
+
+# Unblocked Urls
+The machines that are being tested should be be able to reach these links:
+
+	http://registry.ibmcloudpack.com/cpd301/
+        https://registry.redhat.io
+        https://quay.io
+        https://sso.redhat.com
+        https://github.com/IBM
+        https://cp.icr.io
+        https://us.icr.io
+        https://gcr.io
+        https://k8s.gcr.io
+        https://quay.io
+        https://docker.io
+        https://raw.github.com
+        https://myibm.ibm.com
+        https://www.ibm.com/software/passportadvantage/pao_customer.html
+        https://www.ibm.com/support/knowledgecenter
+        http://registry.ibmcloudpack.com/
+        https://docs.portworx.com
+
+
+# Helpful Links
+If certain tests fail, these links should be able to help address some issues:
+
+	https://www.ibm.com/support/knowledgecenter/SSQNUZ_3.0.1/cpd/install/node-settings.html#node-settings__lb-proxy for changing load balancer timeout settings and compute node docker container settings.
+	https://www.ibm.com/support/knowledgecenter/SSEPGG_11.5.0/com.ibm.db2.luw.qb.server.doc/doc/t0008238.html for updating kernel parameters on compute nodes

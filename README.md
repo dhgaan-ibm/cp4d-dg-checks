@@ -25,7 +25,7 @@ Example Script Calls:
 # Validation List
 | Validation | Requirement | Pre-OCP | Post-OCP | Pre-CPD |
 | --- | --- | --- | --- | --- |
-| Processor Type | x86_64 | X | X | |
+| Processor Type | x86_64, ppc64 | X | X | |
 | Disk Latency | 50 Kb/sec | X | | |
 | Disk Throughput | 1 Gb/sec | X | | |
 | DNS Configuration | DNS must be enabled | X | | |

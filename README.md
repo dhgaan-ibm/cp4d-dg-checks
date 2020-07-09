@@ -23,3 +23,31 @@ Example Script Calls:
 ./pre_install_chk.sh --phase=post_openshift --host_type=core
 
 # Validation List
+| Validation | Requirement | Pre-OCP | Post-OCP | Pre-CPD |
+| --- | --- | --- | --- | --- |
+| Processor Type | x86_64 | X | X | |
+| Disk Latency | 50 Kb/sec | X | | |
+| Disk Throughput | 1 Gb/sec | X | | |
+| DNS Configuration | DNS must be enabled | X | | |
+| Resolving hostname via DNS | Hostname resolution enabled | X | X | |
+| Default Gateway | Route for default gateway exists | X | | |
+| Validate Internet Connectivity | | X | | |
+| Valid IPs | | X | | |
+| Validate Network Speed | | X | | |
+| Check subnet | | X | | |
+| Disk Type | Must be xfs file system | X | | |
+| Unblocked urls | | X | | |
+| Clock Sync | Synchronize computer system clock on all nodes within 500ms | | X | |
+| Disk Encryption | LUKS enabled | | X | |
+| Openshift Version | at least 4.3.13 | | X | |
+| CRI-O Version | at least 1.13 | | X | |
+| Timeout Settings (Load Balancer only) | HAProxy timeout should be set to 5 minutes | | X | |
+| Max open files on compute | at least 66560 | | X | |
+| Max process on compute | at least 12288 | | X | |
+| Kernel Virtual Memory on compute | vm.max_map_count>=262144 | | | X |
+| Message Limit on compute | kernel.msgmax >= 65536, kernel.msgmnb >= 65536, kernel.msgmni >= 32768 | | | X |
+| Shared Memory Limit on compute | kernel.shmmax >= 68719476736, kernel.shmall >= 33554432, kernel.shmmni >= 16384 | | | X |
+| Semaphore Limit on compute | kernel.sem >= 250 1024000 100 16384 | | | X |
+| Cluster-admin account | | | | X |
+| Cluster-admin user must grant the cpd-admin-role to the project administration | | | | X |
+| No user group defined under scc anyuid | system:authenticated and system:serviceaccounts should not be in scc anyuid | | | X |

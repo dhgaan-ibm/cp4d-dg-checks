@@ -239,7 +239,7 @@ function check_processor() {
     ansible-playbook -i hosts_openshift -l ${hosts} playbook/processor_check.yml > ${ANSIBLEOUT}
 
     if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
-	log "ERROR: Processor type must be x86_64" result
+	log "ERROR: Processor type must be x86_64 or ppc64" result
 	cat ${ANSIBLEOUT} >> ${OUTPUT}
 	ERROR=1
     else
@@ -791,6 +791,8 @@ if [[ ${PRE} -eq 1 ]]; then
     check_unblocked_urls
 elif [[ ${POST} -eq 1 ]]; then
     check_fix_clocksync
+    check_processor
+    check_dnsresolve
 #    check_kernel_vm
 #    check_message_limit
     check_timeout_settings

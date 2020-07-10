@@ -63,6 +63,11 @@ Example Script Calls:
 
 	./pre_install_chk.sh --phase=post_openshift --host_type=core
 
+# Output
+This script takes advantage of ansible playbooks to perform its checks.
+If any test fails, you can view the results of its playbook in /tmp/preInstallCheckResult
+The current value of the variable tested will appear under the 'debug' task for that particular playbook.
+
 # Validation List
 | Validation | Requirement | Pre-OCP | Post-OCP | Pre-CPD |
 | --- | --- | --- | --- | --- |

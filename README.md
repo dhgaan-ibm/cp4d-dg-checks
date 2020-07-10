@@ -65,7 +65,9 @@ Example Script Calls:
 
 # Output
 This script takes advantage of ansible playbooks to perform its checks.
+
 If any test fails, you can view the results of its playbook in /tmp/preInstallCheckResult
+
 The current value of the variable tested will appear under the 'debug' task for that particular playbook.
 
 # Validation List

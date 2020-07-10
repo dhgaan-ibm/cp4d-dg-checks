@@ -2,24 +2,29 @@
 
 ---
 
-#- name: install iperf
-#  hosts: bastion:master[0]
+#- name: install iperf on master
+#  hosts: master[0]
 #  tasks:
-#  - name: get name
-    #shell: yum install -y iperf3
+#  - name: install iperf
+#    shell: wget https://iperf.fr/download/fedora/iperf3-3.1.3-1.fc24.x86_64.rpm
+#    register: core_install
+#  - debug:
+#      var: core_install.stdout
+
+- name: install iperf
+  hosts: bastion
+  tasks: []
+#  - name: install iperf on bastion
+#    shell: yum install -y iperf3
 #    register: output
 #    ignore_errors: yes
 #  - debug:
 #      var: output.stdout
-
-- name: bastion server
-  hosts: bastion
-  tasks: []
-
+#
 #  - name: set up server 
 #    shell: iperf -s -t 20
 #    register: bast
-
+#
 #  - debug:
 #      var: bast.stdout
 
@@ -39,11 +44,11 @@
       var: mast.stdout
 
 - name: remove iperf
-  hosts: bastion:master[0]
+  hosts: bastion
   tasks:
   - name: remove iperf
     shell: yum remove -y iperf3
     register: removed
-    - debug:
-        var: removed.stdout
+  - debug:
+      var: removed.stdout
 

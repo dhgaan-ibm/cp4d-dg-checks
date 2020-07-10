@@ -45,11 +45,12 @@ function usage(){
 	--phase=[pre_ocp|post_ocp|pre_cpd]                       To specify installation type"
     echo "	
 	--host_type=[core|worker|master|bastion]                 To specify nodes to check (Default is bastion).
-	The valid arguments to --host_type are the names of the groupings of nodes listed in hosts_openshift"
-    echo "
-	--compute=[worker|compute]                               To specify compute nodes as listed in hosts_openshift for kernel parameter checks (Default is worker)"
+								 The valid arguments to --host_type are the names 
+  								 of the groupings of nodes listed in hosts_openshift"
+#    echo "
+#	--compute=[worker|compute]                               To specify compute nodes as listed in hosts_openshift 
+#								for kernel parameter checks (Default is worker)"
     echo ""
-#    echo "The valid arguments to --host_type are the names of the groupings of nodes listed in hosts_openshift"
     echo -e "\033[0;34mNOTE: If any test displays a 'Could not match supplied host pattern' warning, you will have to modify the hosts_openshift inventory file so that your nodes are correctly grouped, or utilize the --host_type argument to pass in the correct group of nodes to be tested. 
 Some tests are configured to only be ran on certain groups.\033[0m"
     echo ""
@@ -189,7 +190,21 @@ function validate_ips(){
 }
 
 function validate_network_speed(){
-    echo -e "test"
+    output=""
+    echo -e "\nChecking network speed" | tee -a ${OUTPUT}
+    ansible-playbook -i hosts_openshift -l ${hosts} playbook/check_subnet.yml > ${ANSIBLEOUT}
+
+    bandwidth=$(grep ${ANSIBLEOUT})
+
+    log "Bandwidth between bastion and master node is ${bandwidth}" result
+    cat ${ANSIBLEOUT} >> ${OUTPUT}
+    LOCALTEST=1
+    output+="$result"
+
+    if [[ ${LOCALTEST} -eq 1 ]]; then
+        printout "$output"
+    fi
+
 }
 
 function check_subnet(){
@@ -767,10 +782,16 @@ else
 		hosts=${HOSTTYPE}
 		;;
 
-	    --compute=*)
-                COMPUTETYPE="${var#*=}"
-		shift
-		compute=${COMPUTETYPE}
+#	    --compute=*)
+#                COMPUTETYPE="${var#*=}"
+#		shift
+#		compute=${COMPUTETYPE}
+
+	    *)
+                echo "Sorry the argument is invalid"
+                usage
+                exit 1
+                ;;
 
 	esac
 	done

@@ -1,0 +1,49 @@
+## Network Speed
+
+---
+
+#- name: install iperf
+#  hosts: bastion:master[0]
+#  tasks:
+#  - name: get name
+    #shell: yum install -y iperf3
+#    register: output
+#    ignore_errors: yes
+#  - debug:
+#      var: output.stdout
+
+- name: bastion server
+  hosts: bastion
+  tasks: []
+
+#  - name: set up server 
+#    shell: iperf -s -t 20
+#    register: bast
+
+#  - debug:
+#      var: bast.stdout
+
+- name: master client
+  hosts: master[0]
+  vars: 
+    bast_ip: "{{ hostvars[groups['bastion'][0]]['ansible_env'].SSH_CONNECTION.split(' ')[2] }}"
+  tasks:
+  - debug:
+      var: bast_ip
+
+  - name: set up client
+    shell: iperf -c {{ bast_ip }} 
+    register: mast
+
+  - debug:
+      var: mast.stdout
+
+- name: remove iperf
+  hosts: bastion:master[0]
+  tasks:
+  - name: remove iperf
+    shell: yum remove -y iperf3
+    register: removed
+    - debug:
+        var: removed.stdout
+

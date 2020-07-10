@@ -192,9 +192,9 @@ function validate_ips(){
 function validate_network_speed(){
     output=""
     echo -e "\nChecking network speed" | tee -a ${OUTPUT}
-    ansible-playbook -i hosts_openshift -l ${hosts} playbook/check_subnet.yml > ${ANSIBLEOUT}
+    ansible-playbook -i hosts_openshift playbook/check_network_speed.yml > ${ANSIBLEOUT}
 
-    bandwidth=$(grep ${ANSIBLEOUT})
+    bandwidth=$(grep -Eo '[0-9]*\.[0-9]*\sGbits/sec' ${ANSIBLEOUT})
 
     log "Bandwidth between bastion and master node is ${bandwidth}" result
     cat ${ANSIBLEOUT} >> ${OUTPUT}

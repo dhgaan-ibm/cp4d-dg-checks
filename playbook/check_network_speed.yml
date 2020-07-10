@@ -13,20 +13,20 @@
 
 - name: install iperf
   hosts: bastion
-  tasks: []
-#  - name: install iperf on bastion
-#    shell: yum install -y iperf3
-#    register: output
-#    ignore_errors: yes
-#  - debug:
-#      var: output.stdout
-#
-#  - name: set up server 
-#    shell: iperf -s -t 20
-#    register: bast
-#
-#  - debug:
-#      var: bast.stdout
+  tasks: 
+  - name: install iperf on bastion
+    shell: yum install -y iperf3
+    register: output
+    ignore_errors: yes
+  - debug:
+      var: output.stdout
+
+  - name: set up server 
+    shell: iperf3 -s -D -1
+    register: bast
+
+  - debug:
+      var: bast.stdout
 
 - name: master client
   hosts: master[0]
@@ -37,18 +37,18 @@
       var: bast_ip
 
   - name: set up client
-    shell: iperf -c {{ bast_ip }} 
+    shell: iperf3 -c {{ bast_ip }} 
     register: mast
 
   - debug:
       var: mast.stdout
 
-- name: remove iperf
-  hosts: bastion
-  tasks:
-  - name: remove iperf
-    shell: yum remove -y iperf3
-    register: removed
-  - debug:
-      var: removed.stdout
+#- name: kill iperf
+#  hosts: bastion
+#  tasks:
+#  - name: remove iperf
+#    shell: yum remove -y iperf3
+#    register: removed
+#  - debug:
+#      var: removed.stdout
 

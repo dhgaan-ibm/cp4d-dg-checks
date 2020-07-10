@@ -75,6 +75,8 @@ function log() {
 	eval "$2='\033[1m$1\033[0m'"
     elif [[ "$1" =~ ^WARNING* ]]; then
 	eval "$2='\033[1m$1\033[0m'"
+    elif [[ "$1" =~ ^NOTE* ]]; then
+        eval "$2='\033[1m$1\033[0m'"
     else
 	eval "$2='\033[92m\033[1m$1\033[0m'"
     fi
@@ -194,9 +196,9 @@ function validate_network_speed(){
     echo -e "\nChecking network speed" | tee -a ${OUTPUT}
     ansible-playbook -i hosts_openshift playbook/check_network_speed.yml > ${ANSIBLEOUT}
 
-    bandwidth=$(grep -Eo '[0-9]*\.[0-9]*\sGbits/sec' ${ANSIBLEOUT})
+    bandwidth=$(grep '0.00-10.00' ${ANSIBLEOUT} | grep -Eo '[0-9]*\.[0-9]*\sGbits/sec' | awk "NR==11")
 
-    log "Bandwidth between bastion and master node is ${bandwidth}" result
+    log "NOTE: Bandwidth between bastion and master node is ${bandwidth}" result
     cat ${ANSIBLEOUT} >> ${OUTPUT}
     LOCALTEST=1
     output+="$result"
@@ -798,18 +800,19 @@ else
 fi
 
 if [[ ${PRE} -eq 1 ]]; then
-    validate_internet_connectivity
-    validate_ips
-    check_subnet
-    check_dnsconfiguration
-    check_processor
-    check_dnsresolve
-    check_gateway
-    check_hostname
-    check_disklatency
-    check_diskthroughput
-    check_dockerdir_type
-    check_unblocked_urls
+#    validate_internet_connectivity
+#    validate_ips
+    validate_network_speed
+#    check_subnet
+#    check_dnsconfiguration
+#    check_processor
+#    check_dnsresolve
+#    check_gateway
+#    check_hostname
+#    check_disklatency
+#    check_diskthroughput
+#    check_dockerdir_type
+#    check_unblocked_urls
 elif [[ ${POST} -eq 1 ]]; then
     check_fix_clocksync
     check_processor

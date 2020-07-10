@@ -3,7 +3,14 @@
 This project contains a set of pre-installation checks designed to validate that your system is compatible with RedHat Openshift 4.3.13+ and Cloud Pak 4 Data 3.0.1 installations.
 # Setup
 1. Clone git repository
-2. Set up hosts_openshift inventory file according to the cluster. A sample_hosts_openshift file is provided.
+```
+git clone https://github.com/dhgaan-ibm/cp4d-dg-checks.git
+```
+2. Go to cp4d-dg-checks directory
+```
+cd cp4d-dg-checks
+```
+3. Set up hosts_openshift inventory file according to the cluster. A sample_hosts_openshift file is provided.
 ```
 vi hosts_openshift
 ```
@@ -35,7 +42,7 @@ worker2_node_name private_ip=10.87.103.96 name=worker-03 type=worker ansible_ssh
 ansible_ssh_user=core
 ansible_python_interpreter=/var/home/core/pypy/bin/pypy
 ```
-3. run setup_bastion.sh
+4. run setup_bastion.sh
 ```	
 ./setup_bastion.sh
 ```

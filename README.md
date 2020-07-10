@@ -4,11 +4,12 @@ This project contains a set of pre-installation checks designed to validate that
 # Setup
 1. Clone git repository
 2. Set up hosts_openshift inventory file according to the cluster. A sample_hosts_openshift file is provided.
-
-	vi hosts_openshift
+```
+vi hosts_openshift
+```
 	
 Example file:
-
+```
 [bastion]
 bastion_node_name private_ip=9.30.205.216 name=bastion type=bastion ansible_ssh_user=root
 
@@ -33,16 +34,16 @@ worker2_node_name private_ip=10.87.103.96 name=worker-03 type=worker ansible_ssh
 [core:vars]
 ansible_ssh_user=core
 ansible_python_interpreter=/var/home/core/pypy/bin/pypy
-
+```
 3. run setup_bastion.sh
-	
-	./setup_bastion.sh
-
-	Since RHCOS machines do not have the necessary python libraries to run the pre-checks, this script will prep the machines with an ansible-galaxy 	install. After you are done with all checks, run:
-	
-	./setup_bastion.sh -r
-	
-	to remove the install.
+```	
+./setup_bastion.sh
+```
+Since RHCOS machines do not have the necessary python libraries to run the pre-checks, this script will prep the machines with an ansible-galaxy 	install. After you are done with all checks, run:
+```
+./setup_bastion.sh -r
+```
+to remove the install.
 
 # Usage
 This script checks if all nodes meet requirements for OpenShift and CPD installation.

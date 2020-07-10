@@ -3,10 +3,51 @@
 This project contains a set of pre-installation checks designed to validate that your system is compatible with RedHat Openshift 4.3.13+ and Cloud Pak 4 Data 3.0.1 installations.
 # Setup
 1. Clone git repository
-2. Set up your hosts_openshift inventory file.
+2. Set up hosts_openshift inventory file according to the cluster. A sample_hosts_openshift file is provided.
+```
+vi hosts_openshift
+```
+	
+Example file:
+```
+[bastion]
+bastion_node_name private_ip=9.30.205.216 name=bastion type=bastion ansible_ssh_user=root
+
+[master]
+master0_node_name private_ip=10.87.103.68 name=master-01 type=master ansible_ssh_user=core
+master1_node_name private_ip=10.87.103.123 name=master-02 type=master ansible_ssh_user=core
+master2_node_name private_ip=10.87.103.121 name=master-03 type=master ansible_ssh_user=core
+
+[worker]
+worker0_node_name private_ip=10.87.103.117 name=worker-01 type=worker ansible_ssh_user=core
+worker1_node_name private_ip=10.87.103.108 name=worker-02 type=worker ansible_ssh_user=core
+worker2_node_name private_ip=10.87.103.96 name=worker-03 type=worker ansible_ssh_user=core
+
+[core]
+master0_node_name private_ip=10.87.103.68 name=master-01 type=master ansible_ssh_user=core
+master1_node_name private_ip=10.87.103.123 name=master-02 type=master ansible_ssh_user=core
+master2_node_name private_ip=10.87.103.121 name=master-03 type=master ansible_ssh_user=core
+worker0_node_name private_ip=10.87.103.117 name=worker-01 type=worker ansible_ssh_user=core
+worker1_node_name private_ip=10.87.103.108 name=worker-02 type=worker ansible_ssh_user=core
+worker2_node_name private_ip=10.87.103.96 name=worker-03 type=worker ansible_ssh_user=core
+
+[core:vars]
+ansible_ssh_user=core
+ansible_python_interpreter=/var/home/core/pypy/bin/pypy
+```
+3. run setup_bastion.sh
+```	
+./setup_bastion.sh
+```
+Since RHCOS machines do not have the necessary python libraries to run the pre-checks, this script will prep the machines with an ansible-galaxy 	install. After you are done with all checks, run:
+```
+./setup_bastion.sh -r
+```
+to remove the install.
+
 # Usage
 This script checks if all nodes meet requirements for OpenShift and CPD installation.
-
+ 
 Arguments: 
 
 	--phase=[pre_ocp|post_ocp|pre_cpd]                       To specify installation type

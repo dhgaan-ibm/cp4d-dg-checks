@@ -12,7 +12,12 @@ hosts=bastion
 compute=worker
 
 #global variables
-GLOBAL=(https://www.ibm.com/support/knowledgecenter/SSQNUZ_3.0.1/cpd/install/node-settings.html#node-settings__lb-proxy)
+GLOBAL=(https://www.ibm.com/support/knowledgecenter/SSQNUZ_3.0.1/cpd/install/node-settings.html#node-settings__lb-proxy,
+3.0.0,
+3.0.1,
+64,
+16
+)
 
 #These urls should be unblocked. The function check_unblocked_urls will validate that these are reachable
 URLS=(
@@ -749,6 +754,36 @@ function check_admin_role(){
     fi
 }
 
+function check_installer_ver(){
+    output=""
+    echo -e "\nChecking installer version" | tee -a ${OUTPUT}
+    read -p "\nWhat version of Cloud Pak 4 Data do you intend to install?
+Examples: 3.0.0, 3.0.1" cpd ver
+#    read cpd_ver
+    read -p "\nPlease input path of CPD installer file
+Examples: 
+Current directory = /cpd-<os>
+folder in root directory = /root/folder_name/cpd-<os>" install_path
+#    read install_path
+    if [[ ${cpd_ver} != GLOBAL[2] ]]; then
+	log "\nWARNING: Planned install version is not latest version (3.0.1)" result
+	WARNING=1
+    fi
+
+    install_ver=$(.${install_path} version | grep '[0-9]\.[0-9]\.[0-9]*')  
+    install_build=$(.${install_path} version | grep '[0-9]*$')
+
+    if [[ ${install_ver} != ${cpd_ver} ]]; then
+	log "\nERROR: Planned install version does not match installer version" result
+	ERROR=1
+    fi
+
+    if [[ ${install_ver} == GLOBAL[1] ]]; then
+	if [[ ${install_build != GLOBAL[3] ]]; then
+	    log "\nERROR:
+    
+}
+
 
 #BEGIN CHECK
 PRE=0
@@ -800,19 +835,19 @@ else
 fi
 
 if [[ ${PRE} -eq 1 ]]; then
-#    validate_internet_connectivity
-#    validate_ips
+    validate_internet_connectivity
+    validate_ips
     validate_network_speed
-#    check_subnet
-#    check_dnsconfiguration
-#    check_processor
-#    check_dnsresolve
-#    check_gateway
-#    check_hostname
-#    check_disklatency
-#    check_diskthroughput
-#    check_dockerdir_type
-#    check_unblocked_urls
+    check_subnet
+    check_dnsconfiguration
+    check_processor
+    check_dnsresolve
+    check_gateway
+    check_hostname
+    check_disklatency
+    check_diskthroughput
+    check_dockerdir_type
+    check_unblocked_urls
 elif [[ ${POST} -eq 1 ]]; then
     check_fix_clocksync
     check_processor
@@ -836,6 +871,7 @@ elif [[ ${PRE_CPD} -eq 1 ]]; then
     check_scc_anyuid
     check_cluster_admin
     check_admin_role
+    check_installer_ver
 fi
 
 if [[ ${ERROR} -eq 1 ]]; then

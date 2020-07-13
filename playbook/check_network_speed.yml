@@ -11,15 +11,15 @@
 #  - debug:
 #      var: core_install.stdout
 
-- name: install iperf
+- name: run iperf server on bastion
   hosts: bastion
   tasks: 
-  - name: install iperf on bastion
-    shell: yum install -y iperf3
-    register: output
-    ignore_errors: yes
-  - debug:
-      var: output.stdout
+#  - name: install iperf on bastion
+#    shell: yum install -y iperf3
+#    register: output
+#    ignore_errors: yes
+#  - debug:
+#      var: output.stdout
 
   - name: set up server 
     shell: iperf3 -s -D -1
@@ -28,7 +28,7 @@
   - debug:
       var: bast.stdout
 
-- name: master client
+- name: run iperf client on master node
   hosts: master[0]
   vars: 
     bast_ip: "{{ hostvars[groups['bastion'][0]]['ansible_env'].SSH_CONNECTION.split(' ')[2] }}"

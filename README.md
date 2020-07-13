@@ -2,15 +2,15 @@
 # Description
 This project contains a set of pre-installation checks designed to validate that your system is compatible with RedHat Openshift 4.3.13+ and Cloud Pak 4 Data 3.0.1 installations.
 # Setup
-1. Clone git repository
+1. CLONE git repository
 ```
 git clone https://github.com/dhgaan-ibm/cp4d-dg-checks.git
 ```
-2. Go to cp4d-dg-checks directory
+2. GO to cp4d-dg-checks directory
 ```
 cd cp4d-dg-checks
 ```
-3. Set up hosts_openshift inventory file according to the cluster. A sample_hosts_openshift file is provided.
+3. SET UP hosts_openshift inventory file according to the cluster. A sample_hosts_openshift file is provided.
 ```
 vi hosts_openshift
 ```
@@ -42,7 +42,7 @@ worker2_node_name private_ip=10.87.103.96 name=worker-03 type=worker ansible_ssh
 ansible_ssh_user=core
 ansible_python_interpreter=/var/home/core/pypy/bin/pypy
 ```
-4. run setup_bastion.sh
+4. RUN setup_bastion.sh
 ```	
 ./setup_bastion.sh
 ```
@@ -51,6 +51,29 @@ Since RHCOS machines do not have the necessary python libraries to run the pre-c
 ./setup_bastion.sh -r
 ```
 to remove the install.
+
+5. INSTALL iperf, netaddr
+
+This script utilizes iperf3 and netaddr to complete some of its checks.
+
+Netaddr, a python package used in this script for obtaining ip addresses, can be installed on the bastion machine with:
+```
+yum install -y python-netaddr
+```
+iperf3, a networking utility used in this script for checking the network bandwidth between the bastion and the master node listed at the TOP OF YOUR MASTER GROUP in your inventory file, can be installed on the bastion machine with:
+```
+yum install -y iperf3
+```
+Make sure the core machine you are installing to is the node listed at the top of your \[master\] group in your inventory file. To install on the core master machine, push the iperf3 rpm file included in this directory from the bastion node to the master node's home directory with this command:
+```
+scp iperf3-3.1.3-1.fc24.x86_64.rpm core@<master_node_name>:~/ 
+```
+Then run these commands on the core master node to complete the install:
+```
+sudo rpm-ostree install iperf3-3.1.3-1.fc24.x86_64.rpm
+sudo systemctl reboot
+```
+MAKE SURE IT IS OK TO REBOOT YOUR MACHINE BEFORE RUNNING THE REBOOT COMMAND(i.e. no other users are logged into the machine)
 
 # Usage
 This script checks if all nodes meet requirements for OpenShift and CPD installation.

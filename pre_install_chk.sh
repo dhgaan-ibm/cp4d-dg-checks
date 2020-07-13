@@ -11,11 +11,14 @@ rm -f ${ANSIBLEOUT}
 hosts=bastion
 compute=worker
 
+#if your cpd-installer file is not in the same directory as this test folder, 
+#you can use installer_path to set the path for check_installer_ver
+installer_path=
+#Example: .<installer_path>/cpd-<os>
+
 #global variables
 GLOBAL=(https://www.ibm.com/support/knowledgecenter/SSQNUZ_3.0.1/cpd/install/node-settings.html#node-settings__lb-proxy,
-3.0.0,
 3.0.1,
-64,
 16
 )
 
@@ -757,30 +760,38 @@ function check_admin_role(){
 function check_installer_ver(){
     output=""
     echo -e "\nChecking installer version" | tee -a ${OUTPUT}
-    read -p "\nWhat version of Cloud Pak 4 Data do you intend to install?
-Examples: 3.0.0, 3.0.1" cpd ver
-#    read cpd_ver
-    read -p "\nPlease input path of CPD installer file
-Examples: 
-Current directory = /cpd-<os>
-folder in root directory = /root/folder_name/cpd-<os>" install_path
-#    read install_path
-    if [[ ${cpd_ver} != GLOBAL[2] ]]; then
-	log "\nWARNING: Planned install version is not latest version (3.0.1)" result
-	WARNING=1
+    OS=$(uname)
+    OS=${OS,}
+    echo -e "Your os is ${OS}. If you get an error below that ./cpd-${OS} does not exist,
+modify the installer_path variable at the top of pre_install_chk.sh to redirect to file."
+
+    install_ver=$(.${installer_path}/cpd-${OS} version | grep '[0-9]\.[0-9]\.[0-9]*')  
+    install_build=$(.${installer_path}/cpd-${OS} version | grep '[0-9]*$')
+
+    if [[ ${install_ver} != GLOBAL[1] ]]; then
+	log "\nERROR: Installer version must be 3.0.1, current version is
+${install_ver}" result
+	ER=1
     fi
 
-    install_ver=$(.${install_path} version | grep '[0-9]\.[0-9]\.[0-9]*')  
-    install_build=$(.${install_path} version | grep '[0-9]*$')
+    if [[ ${install_build} -lt GLOBAL[2] ]]; then
+	log "\nERROR: Installer build must be greater than or equal to 16,
+Current build is ${install_build}" result
+	ER=1
+    fi
 
-    if [[ ${install_ver} != ${cpd_ver} ]]; then
-	log "\nERROR: Planned install version does not match installer version" result
+    if [[ ${ER} -eq 0 ]]; then
+	log "[Passed]" result
+    else
 	ERROR=1
     fi
 
-    if [[ ${install_ver} == GLOBAL[1] ]]; then
-	if [[ ${install_build != GLOBAL[3] ]]; then
-	    log "\nERROR:
+    LOCALTEST=1
+    output+="$result"
+
+    if [[ ${LOCALTEST} -eq 1 && ${ER} -eq 0 ]]; then
+        printout "$output"
+    fi
     
 }
 
@@ -852,17 +863,12 @@ elif [[ ${POST} -eq 1 ]]; then
     check_fix_clocksync
     check_processor
     check_dnsresolve
-#    check_kernel_vm
-#    check_message_limit
     check_timeout_settings
     check_openshift_version
     check_crio_version
-#    check_shm_limit
     check_disk_encryption
-#    check_sem_limit
     check_max_files
     check_max_process
-#    check_scc_anyuid
 elif [[ ${PRE_CPD} -eq 1 ]]; then
     check_kernel_vm
     check_message_limit

@@ -7,16 +7,19 @@
   roles:
     - akirak.coreos-python
 
+  vars_files:
+   - ../vars/globals.yml
+
   tasks:
   - name: Populate client Variable
-    shell: grep 'timeout client' /etc/haproxy/haproxy.cfg
+    shell: grep 'timeout client' {{ haproxy_location }}
     register: client
 
   - debug:
       var: client.stdout
 
   - name: Populate server variable
-    shell: grep 'timeout server' /etc/haproxy/haproxy.cfg
+    shell: grep 'timeout server' {{ haproxy_location }}
     register: server
 
   - debug:

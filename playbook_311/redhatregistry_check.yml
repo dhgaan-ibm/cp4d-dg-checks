@@ -1,0 +1,13 @@
+## Checking connectivity to RedHat Artifactory server
+---
+- hosts: all
+  gather_facts: yes
+
+  vars_files:
+    - ../vars/globals.yml
+
+  tasks:
+  - name: Check RedHat Artifactory
+    shell: ping -c 1 {{ redhat_artifactory }}
+    register: output
+    failed_when: "output.rc != 0"

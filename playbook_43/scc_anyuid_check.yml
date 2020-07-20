@@ -1,0 +1,24 @@
+## Checking scc anyuid for user groups
+
+---
+- hosts: all
+  gather_facts: yes
+
+  roles:
+    - akirak.coreos-python
+
+  tasks:
+  - name: Populate Variable
+    shell: oc version
+    register: scc
+
+  - debug:
+      var: scc.stdout
+
+  - name: Check scc anyuid for user groups
+    shell: grep -Eo ('system:authenticated'|'system:serviceaccounts') <<< "{{ scc.stdout }}"
+    register: devices_listed
+    failed_when: devices_listed.stdout != ""
+
+  - debug:
+     var: devices_listed.stdout

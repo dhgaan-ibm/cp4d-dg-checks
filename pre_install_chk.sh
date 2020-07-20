@@ -22,6 +22,23 @@ GLOBAL=(
 	3.0.1
 	16
        )
+OCP_VER=(
+	4.3.13
+	4.3.18 
+	4.3.19 
+	4.3.21 
+	4.3.22 
+	4.3.23 
+	4.3.24 
+	4.3.25 
+	4.3.26 
+	4.3.27 
+	4.3.28 
+	4.3.29
+	4.5.0 
+	4.5.1 
+	4.5.2
+	)
 
 #These urls should be unblocked. The function check_unblocked_urls will validate that these are reachable
 URLS=(
@@ -75,7 +92,7 @@ The current value of the variable tested will appear under the 'debug' task for 
 
 
 
-
+###############
 
 function log() {
     if [[ "$1" =~ ^ERROR* ]]; then
@@ -95,14 +112,31 @@ function printout() {
     echo -e "$1" | tee -a ${OUTPUT}
 }
 
+function contains() {
+    local n=$#
+    local value=${!n}
+    for ((i=1;i < $#;i++)) {
+        if [ "${!i}" == "${value}" ]; then
+            echo "y"
+            return 0
+        fi
+    }
+    echo "n"
+    return 1
+}
+
+#################
+
 function check_openshift_version() {
     output=""
     echo -e "\nChecking Openshift Version" | tee -a ${OUTPUT}
-    ansible-playbook -i hosts_openshift -l ${hosts} playbook/check_oc_ver.yml > ${ANSIBLEOUT}
- 
-    if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
+#    ansible-playbook -i hosts_openshift -l ${hosts} playbook/check_oc_ver.yml > ${ANSIBLEOUT}
+    vers=$(oc version | grep "Server Version:" | grep -Eo "([0-9]{1,}\.)+[0-9]{1,}")
+    echo "${vers}"
+         
+
+    if [[ $(contains "${OCP_VER[@]}" "${vers}") == "n" ]]; then
         log "ERROR: Your version of Openshift is not compatible with Cloud Pak 4 Data. Please update to at least version 4.3.13" result
-        cat ${ANSIBLEOUT} >> ${OUTPUT}
         ERROR=1
     else
         log "[Passed]" result
@@ -163,7 +197,7 @@ Visit ${GLOBAL[0]} for update commands" result
 function validate_internet_connectivity(){
     output=""
     echo -e "\nChecking Connection to Internet" | tee -a ${OUTPUT}
-    ansible-playbook -i hosts_openshift -l ${hosts} playbook/internet_connect.yml > ${ANSIBLEOUT}
+    ansible-playbook -i hosts_openshift -l ${hosts} playbook_43/internet_connect.yml > ${ANSIBLEOUT}
 
     if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
 	log "ERROR: Could not reach IBM.com. Check internet connection" result
@@ -183,7 +217,7 @@ function validate_internet_connectivity(){
 function validate_ips(){
     output=""
     echo -e "\nChecking for host IP Address" | tee -a ${OUTPUT}
-    ansible-playbook -i hosts_openshift -l ${hosts} playbook/validate_ip_addresses.yml > ${ANSIBLEOUT}
+    ansible-playbook -i hosts_openshift -l ${hosts} playbook_43/validate_ip_addresses.yml > ${ANSIBLEOUT}
     
     if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
         log "ERROR: Host ip is not a valid ip." result
@@ -203,7 +237,7 @@ function validate_ips(){
 function validate_network_speed(){
     output=""
     echo -e "\nChecking network speed" | tee -a ${OUTPUT}
-    ansible-playbook -i hosts_openshift playbook/check_network_speed.yml > ${ANSIBLEOUT}
+    ansible-playbook -i hosts_openshift playbook_43/check_network_speed.yml > ${ANSIBLEOUT}
 
     bandwidth=$(grep '0.00-10.00' ${ANSIBLEOUT} | grep -Eo '[0-9]*\.[0-9]*\sGbits/sec' | awk "NR==11")
 
@@ -221,7 +255,7 @@ function validate_network_speed(){
 function check_subnet(){
     output=""
     echo -e "\nChecking subnet" | tee -a ${OUTPUT}
-    ansible-playbook -i hosts_openshift -l ${hosts} playbook/check_subnet.yml > ${ANSIBLEOUT}
+    ansible-playbook -i hosts_openshift -l ${hosts} playbook_43/check_subnet.yml > ${ANSIBLEOUT}
     
     if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
         log "ERROR: Host ip not in range" result
@@ -242,7 +276,7 @@ function check_subnet(){
 function check_dnsconfiguration(){
     output=""
     echo -e "\nChecking DNS Configuration" | tee -a ${OUTPUT}
-    ansible-playbook -i hosts_openshift -l ${hosts} playbook/dnsconfig_check.yml > ${ANSIBLEOUT}
+    ansible-playbook -i hosts_openshift -l ${hosts} playbook_43/dnsconfig_check.yml > ${ANSIBLEOUT}
 
     if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
         log "ERROR: DNS is not properly setup. Could not find a proper nameserver in /etc/resolv.conf " result
@@ -282,7 +316,7 @@ function check_processor() {
 function check_dockerdir_type(){
     output=""
     echo -e "\nChecking XFS FSTYPE for docker storage" | tee -a ${OUTPUT}
-    ansible-playbook -i hosts_openshift -l ${hosts} playbook/dockerdir_type_check.yml > ${ANSIBLEOUT}
+    ansible-playbook -i hosts_openshift -l ${hosts} playbook_43/dockerdir_type_check.yml > ${ANSIBLEOUT}
 
     if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
         log "ERROR: Docker target filesystem must be formatted with ftype=1. Please reformat or move the docker location" result
@@ -884,11 +918,11 @@ if [[ ${PRE} -eq 1 ]]; then
     check_dockerdir_type
     check_unblocked_urls
 elif [[ ${POST} -eq 1 ]]; then
+    check_openshift_version
     check_fix_clocksync
     check_processor
     check_dnsresolve
     check_timeout_settings
-    check_openshift_version
     check_crio_version
     check_disk_encryption
     check_max_files

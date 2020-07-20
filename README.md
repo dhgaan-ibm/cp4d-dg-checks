@@ -38,6 +38,14 @@ worker0_node_name private_ip=10.87.103.117 name=worker-01 type=worker ansible_ss
 worker1_node_name private_ip=10.87.103.108 name=worker-02 type=worker ansible_ssh_user=core
 worker2_node_name private_ip=10.87.103.96 name=worker-03 type=worker ansible_ssh_user=core
 
+[non-core]
+master0_node_name private_ip=10.87.103.68 name=master-01 type=master ansible_ssh_user=root
+master1_node_name private_ip=10.87.103.123 name=master-02 type=master ansible_ssh_user=root
+master2_node_name private_ip=10.87.103.121 name=master-03 type=master ansible_ssh_user=root
+worker0_node_name private_ip=10.87.103.117 name=worker-01 type=worker ansible_ssh_user=root
+worker1_node_name private_ip=10.87.103.108 name=worker-02 type=worker ansible_ssh_user=root
+worker2_node_name private_ip=10.87.103.96 name=worker-03 type=worker ansible_ssh_user=root
+
 [core:vars]
 ansible_ssh_user=core
 ansible_python_interpreter=/var/home/core/pypy/bin/pypy
@@ -85,7 +93,9 @@ Arguments:
 	--host_type=[core|worker|master|bastion]                 To specify nodes to check (Default is bastion).
 	The valid arguments to --host_type are the names of the groupings of nodes listed in hosts_openshift
 
-	--compute=[worker|compute]                               To specify compute nodes as listed in hosts_openshift for kernel parameter checks (Default is worker)
+	--ocp_ver=[311]                               	 	 To specify openshift version (Default is 4.3). 
+								 This option should be used if ocp version is 3.11
+								 or machines in the cluster are not core machines"
 
 Example Script Calls: 
 

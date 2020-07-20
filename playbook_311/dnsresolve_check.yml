@@ -2,8 +2,8 @@
 ---
 - hosts: all
 
-  roles:
-    - akirak.coreos-python
+#  roles:
+#    - akirak.coreos-python
 
   become: yes
 

@@ -1,11 +1,11 @@
-## Checking if luks is enabled
+u## Checking if luks is enabled
 
 ---
 - hosts: all
   gather_facts: yes
 
-  roles:
-    - akirak.coreos-python
+#  roles:
+#    - akirak.coreos-python
 
   tasks:
   - name: Populate Variable

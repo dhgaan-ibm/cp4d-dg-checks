@@ -4,8 +4,8 @@
 - hosts: all
   gather_facts: yes
 
-  roles:
-    - akirak.coreos-python
+#  roles:
+#    - akirak.coreos-python
 
   tasks:
   - debug:

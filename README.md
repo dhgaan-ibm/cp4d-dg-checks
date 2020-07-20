@@ -38,7 +38,7 @@ worker0_node_name private_ip=10.87.103.117 name=worker-01 type=worker ansible_ss
 worker1_node_name private_ip=10.87.103.108 name=worker-02 type=worker ansible_ssh_user=core
 worker2_node_name private_ip=10.87.103.96 name=worker-03 type=worker ansible_ssh_user=core
 
-[non-core]
+[noncore]
 master0_node_name private_ip=10.87.103.68 name=master-01 type=master ansible_ssh_user=root
 master1_node_name private_ip=10.87.103.123 name=master-02 type=master ansible_ssh_user=root
 master2_node_name private_ip=10.87.103.121 name=master-03 type=master ansible_ssh_user=root
@@ -99,9 +99,9 @@ Arguments:
 
 Example Script Calls: 
 
-	./pre_install_chk.sh --phase=pre_openshift
+	./pre_install_chk.sh --phase=pre_ocp
 
-	./pre_install_chk.sh --phase=post_openshift --host_type=core
+	./pre_install_chk.sh --phase=post_ocp --host_type=core
 
 # Output
 This script takes advantage of ansible playbooks to perform its checks.

@@ -118,6 +118,7 @@ The current value of the variable tested will appear under the 'debug' task for 
 | Disk Throughput | 1 Gb/sec | X | | |
 | DNS Configuration | DNS must be enabled | X | | |
 | Resolving hostname via DNS | Hostname resolution enabled | X | X | |
+| Hostname in lowercase letters | Hostname must be all lowercase | X | | |
 | Default Gateway | Route for default gateway exists | X | | |
 | Validate Internet Connectivity | | X | | |
 | Valid IPs | | X | | |

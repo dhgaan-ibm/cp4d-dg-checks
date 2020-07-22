@@ -288,9 +288,9 @@ function check_subnet(){
     fi
     
     if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
-        log "ERROR: Host ip not in range" result
+        log "WARNING: Host ip not in range" result
         cat ${ANSIBLEOUT} >> ${OUTPUT}
-        ERROR=1
+        WARNING=1
     else
         log "[Passed]" result
     fi
@@ -947,22 +947,59 @@ function check_installer_ver(){
     OS=${OS,}
     echo -e "Your os is ${OS}."
 
-    install_ver=$(find ~/ -name cpd-${OS} -execdir {} version \; | grep -Eo '([0-9]{1,}\.)+[0-9]{1,}')
-    install_build=$(find ~/ -name cpd-${OS} -execdir {} version \; | grep -Eo '[0-9]*$')
+    FS=$(df . --output=target | grep -A 1 'Mounted' | grep -v 'Mounted')
+
+    find_ver=$(find ${FS} -name cpd-${OS} -execdir {} version \;)
+
+    install_ver=($(echo "${find_ver}" | grep -Eo '([0-9]{1,}\.)+[0-9]{1,}'))
+    multiple_check=$(echo "${find_ver}" | wc -l)
+    echo -e ""
+    install_build=($(echo "${find_ver}" | grep -Eo '[0-9]*$'))
 
 
-    echo -e "Installer version is ${install_ver}. Build is ${install_build}"
-    if [[ ${install_ver} != ${GLOBAL[1]} ]]; then
-	log "ERROR: Installer version must be 3.0.1, current version is ${install_ver}" result
-	ER=1
+    if [[ ${multiple_check} -gt 1 ]]; then
+	log "WARNING: Multiple installer files found. Recommended that only one file exist on machine for this test to work properly." result
+        WARNING=1
+	files=($(find ${FS} -name cpd-${OS}))
+	
+	for ((i=0; i < ${#files[@]} ; i++))
+	do
+	   echo -e "File: ${files[i]} Version: ${install_ver[i]} Build: ${install_build[i]}"
+	done
+	
+	echo -e ""
         printout "$result"
+	log "NOTE: Using ${files[0]} for this check" result
+	printout "$result"
+
+	if [[ ${install_ver[0]} != ${GLOBAL[1]} ]]; then
+            log "ERROR: Installer version must be 3.0.1, current version is ${install_ver[0]}" result
+            ER=1
+            printout "$result"
+        fi
+	
+        if [[ ${install_build[0]} -lt ${GLOBAL[2]} && ${ER} -eq 0 ]]; then
+            log "ERROR: Installer build must be greater than or equal to 16" result
+            ER=1
+            printout "$result"
+        fi
+    else
+	echo -e "Installer version is ${install_ver[0]}.
+Build is ${install_build[0]}"
+
+	if [[ ${install_ver[0]} != ${GLOBAL[1]} ]]; then
+        log "ERROR: Installer version must be 3.0.1, current version is ${install_ver[0]}" result
+        ER=1
+        printout "$result"
+        fi
+
+        if [[ ${install_build[0]} -lt ${GLOBAL[2]} && ${ER} -eq 0 ]]; then
+            log "ERROR: Installer build must be greater than or equal to 16" result
+            ER=1
+            printout "$result"
+        fi
     fi
 
-    if [[ ${install_build} -lt ${GLOBAL[2]} && ${ER} -eq 0 ]]; then
-	log "ERROR: Installer build must be greater than or equal to 16" result
-	ER=1
-	printout "$result"
-    fi
 
     if [[ ${ER} -eq 0 ]]; then
 	log "[Passed]" result

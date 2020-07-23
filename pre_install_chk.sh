@@ -20,6 +20,11 @@ GLOBAL=(
 	16
        )
 OCP_VER=(
+	3.11.188
+	3.11.200
+	3.11.216
+	3.11.219
+	3.11.232
 	4.3.13
 	4.3.18 
 	4.3.19 
@@ -128,13 +133,12 @@ function contains() {
 function check_openshift_version() {
     output=""
     echo -e "\nChecking Openshift Version" | tee -a ${OUTPUT}
-#    ansible-playbook -i hosts_openshift -l ${hosts} playbook/check_oc_ver.yml > ${ANSIBLEOUT}
+
     vers=$(oc version | grep "Server Version:" | grep -Eo "([0-9]{1,}\.)+[0-9]{1,}")
     echo "${vers}"
          
-
     if [[ $(contains "${OCP_VER[@]}" "${vers}") == "n" ]]; then
-        log "ERROR: Your version of Openshift is not compatible with Cloud Pak 4 Data. Please update to at least version 4.3.13" result
+        log "ERROR: Your version of Openshift is not compatible with Cloud Pak 4 Data. If on 3.11, update to at least 3.11.188. If on 4.3, update to at least version 4.3.13" result
         ERROR=1
     else
         log "[Passed]" result
@@ -288,9 +292,9 @@ function check_subnet(){
     fi
     
     if [[ `egrep 'unreachable=[1-9]|failed=[1-9]' ${ANSIBLEOUT}` ]]; then
-        log "WARNING: Host ip not in range" result
+        log "ERROR: Host ip not in range" result
         cat ${ANSIBLEOUT} >> ${OUTPUT}
-        WARNING=1
+        ERROR=1
     else
         log "[Passed]" result
     fi
@@ -999,7 +1003,6 @@ Build is ${install_build[0]}"
             printout "$result"
         fi
     fi
-
 
     if [[ ${ER} -eq 0 ]]; then
 	log "[Passed]" result
